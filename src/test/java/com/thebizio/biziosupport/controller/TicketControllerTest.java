@@ -1,6 +1,7 @@
 package com.thebizio.biziosupport.controller;
 
 import com.thebizio.biziosupport.dto.TicketCreateDto;
+import com.thebizio.biziosupport.dto.TicketStatusChangeDto;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.*;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -62,11 +64,15 @@ class TicketControllerTest {
     @BeforeAll
     public void beforeAll() {
         keycloakMockService.mockStart();
+        ticketMessageRepo.deleteAll();
+        ticketRepo.deleteAll();
     }
 
     @AfterAll
     public void afterAll() {
         keycloakMockService.mockStop();
+        ticketMessageRepo.deleteAll();
+        ticketRepo.deleteAll();
     }
 
     @BeforeEach
@@ -116,11 +122,18 @@ class TicketControllerTest {
         dto.setDeviceType(DeviceType.MOBILE);
         dto.setAttachments(attachments);
 
-        mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/tickets"))).andExpect(status().isUnauthorized());
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/tickets"),dto)).andExpect(status().isUnauthorized());
 
         mvc.perform(utilTestService.setUp(post("/api/v1/tickets"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
+        dto.setTitle(null);
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("must not be null or blank")));
+
+        dto.setTitle("");
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.title", is("must not be null or blank")));
     }
 
     @Test
@@ -142,5 +155,46 @@ class TicketControllerTest {
         mvc.perform(utilTestService.setUp(get("/api/v1/tickets?page=1&size=5"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", is(list)))
                 .andExpect(jsonPath("$.pageSize", is(5)));
+    }
+
+    @Test
+    @DisplayName("test for /tickets/change-status")
+    public void change_ticket_status_test() throws Exception {
+        TicketStatusChangeDto dto = new TicketStatusChangeDto();
+        dto.setTicketId(ticket1.getId());
+        dto.setStatus("Close");
+
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/tickets/change-status"),dto)).andExpect(status().isUnauthorized());
+
+        //ticket status is open
+        assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
+
+        //close ticket
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/change-status"),dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        assertEquals(TicketStatus.CLOSED,ticketRepo.findById(ticket1.getId()).get().getStatus());
+
+        //open ticket
+        dto.setStatus("Open");
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/change-status"),dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
+
+
+        dto.setTicketId(null);
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.ticketId", is("must not be null")));
+
+        dto.setTicketId(ticket1.getId());
+        dto.setStatus(null);
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is("must not be null or blank")));
+
+        dto.setTicketId(ticket1.getId());
+        dto.setStatus("");
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status", is("must not be null or blank")));
     }
 }

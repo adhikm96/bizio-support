@@ -4,6 +4,8 @@ import com.thebizio.biziosupport.enums.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -13,6 +15,9 @@ import java.util.Set;
 public class TicketCreateDto {
 
     private TicketType ticketType;
+
+    @NotNull(message = "must not be null or blank")
+    @NotBlank(message = "must not be null or blank")
     private String title;
     private String description;
     private DeviceType deviceType;

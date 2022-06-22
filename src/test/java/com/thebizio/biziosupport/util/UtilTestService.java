@@ -28,7 +28,8 @@ public class UtilTestService {
 	public MockHttpServletRequestBuilder setUp(MockHttpServletRequestBuilder builder, Object body)
 			throws JsonProcessingException {
 		return builder.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
-				.header("Authorization", getToken()).content(objectMapper.writeValueAsString(body));
+				.header("Authorization", getToken())
+				.content(objectMapper.writeValueAsString(body));
 	}
 
 	public MockHttpServletRequestBuilder setUpWithoutToken(MockHttpServletRequestBuilder builder) {
@@ -39,12 +40,5 @@ public class UtilTestService {
 			throws JsonProcessingException {
 		return builder.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
 				.content(objectMapper.writeValueAsString(body));
-	}
-
-	public MockHttpServletRequestBuilder setUpWithoutToken(MockHttpServletRequestBuilder builder, Object body, String sigHeader)
-			throws JsonProcessingException {
-		return builder.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(body))
-				.header("stripe-signature",sigHeader);
 	}
 }

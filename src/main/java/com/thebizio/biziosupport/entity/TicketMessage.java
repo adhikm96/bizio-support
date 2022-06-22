@@ -18,7 +18,7 @@ import java.util.*;
 @ToString
 @NoArgsConstructor
 @JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
-public class TicketMessage {
+public class TicketMessage extends BaseEntity{
 
     @Id
     @GeneratedValue(generator = "uuid4")
