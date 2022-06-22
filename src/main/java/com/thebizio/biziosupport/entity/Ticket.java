@@ -1,4 +1,6 @@
 package com.thebizio.biziosupport.entity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.thebizio.biziosupport.convertor.SetConvertor;
 import com.thebizio.biziosupport.enums.*;
 import lombok.Getter;
@@ -16,6 +18,7 @@ import java.util.*;
 @Setter
 @ToString
 @NoArgsConstructor
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Ticket{
 
     @Id
@@ -38,5 +41,7 @@ public class Ticket{
     private Set<String> attachments = new HashSet<>();
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonBackReference
     private Set<TicketMessage> messages = new HashSet<>();
+
 }
