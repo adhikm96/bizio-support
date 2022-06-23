@@ -17,9 +17,7 @@ public class UtilService {
 		return getKeycloakPrincipal().getPreferredUsername();
 	}
 
-	public String getAuthUserEmail() {
-		return getKeycloakPrincipal().getEmail();
-	}
+	public String getAuthUserEmail() { return getKeycloakPrincipal().getEmail();}
 
 
 }

@@ -6,16 +6,15 @@ import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.TicketStatus;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
+import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import com.thebizio.biziosupport.repo.TicketRepo;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class TicketService {
@@ -25,6 +24,9 @@ public class TicketService {
 
     @Autowired
     private TicketRepo ticketRepo;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Autowired
     private TicketMessageRepo ticketMessageRepo;
@@ -106,5 +108,10 @@ public class TicketService {
         tm.setTicket(ticket);
         ticketMessageRepo.save(tm);
         return "OK";
+    }
+
+    public Set<TicketMessage> getThreadTicket(String ticketId) {
+        Set<TicketMessage> tms = findById(UUID.fromString(ticketId)).getMessages();
+        return modelMapper.map(tms,new TypeToken<Set<TicketMessageDto>>(){}.getType());
     }
 }

@@ -18,11 +18,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -51,6 +49,8 @@ class TicketControllerTest {
     private TicketRepo ticketRepo;
 
     private Ticket ticket1;
+    private TicketMessage tm1;
+    private TicketMessage tm2;
 
     @Autowired
     private TicketMessageRepo ticketMessageRepo;
@@ -72,12 +72,15 @@ class TicketControllerTest {
     @AfterAll
     public void afterAll() {
         keycloakMockService.mockStop();
-//        ticketMessageRepo.deleteAll();
-//        ticketRepo.deleteAll();
+        ticketMessageRepo.deleteAll();
+        ticketRepo.deleteAll();
     }
 
     @BeforeEach
     public void beforeEach() throws Exception {
+        ticketMessageRepo.deleteAll();
+        ticketRepo.deleteAll();
+
         Set<String> attachments = new HashSet<>();
         attachments.add("A");
         attachments.add("B");
@@ -90,13 +93,17 @@ class TicketControllerTest {
         ticket1.setAttachments(attachments);
         ticketRepo.save(ticket1);
 
-        TicketMessage tm1 = new TicketMessage();
+        System.out.println("-----------------");
+        System.out.println("MESSAGE 1 CREATED");
+        tm1 = new TicketMessage();
         tm1.setAttachments(attachments);
         tm1.setMessage("tm1 message");
         tm1.setTicket(ticket1);
         ticketMessageRepo.save(tm1);
 
-        TicketMessage tm2 = new TicketMessage();
+        System.out.println("-----------------");
+        System.out.println("MESSAGE 2 CREATED");
+        tm2 = new TicketMessage();
         tm2.setAttachments(attachments);
         tm2.setMessage("tm2 message");
         tm2.setTicket(ticket1);
@@ -228,6 +235,24 @@ class TicketControllerTest {
         dto.setMessage("");
         mvc.perform(utilTestService.setUp(post("/api/v1/tickets/reply"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("must not be null or blank")));
+    }
+
+    @Test
+    @DisplayName("test for /tickets/thread/{ticketId}")
+    public void get_thread_ticket_test() throws Exception {
+        mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/tickets/thread/"+ticket1.getId()))).andExpect(status().isUnauthorized());
+
+        mvc.perform(utilTestService.setUp(get("/api/v1/tickets/thread/"+ticket1.getId()))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
+                .andExpect(jsonPath("$.resObj[0].id", is(tm1.getId().toString())))
+                .andExpect(jsonPath("$.resObj[0].message", is(tm1.getMessage())))
+                .andExpect(jsonPath("$.resObj[0].ticketId", is(ticket1.getId().toString())))
+                .andExpect(jsonPath("$.resObj[1].id", is(tm2.getId().toString())))
+                .andExpect(jsonPath("$.resObj[1].message", is(tm2.getMessage())))
+                .andExpect(jsonPath("$.resObj[1].ticketId", is(ticket1.getId().toString())));
+
+        mvc.perform(utilTestService.setUp(get("/api/v1/tickets/thread/"+ UUID.randomUUID()))).andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket not found")));
+    }
 
     }
-}

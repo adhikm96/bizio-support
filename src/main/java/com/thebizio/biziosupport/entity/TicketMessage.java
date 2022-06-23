@@ -33,7 +33,6 @@ public class TicketMessage extends BaseEntity{
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ticket_id", referencedColumnName = "id")
-    @JsonManagedReference
     private Ticket ticket;
 
 }

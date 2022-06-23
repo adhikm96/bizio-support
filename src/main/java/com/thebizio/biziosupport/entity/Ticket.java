@@ -18,7 +18,7 @@ import java.util.*;
 @Setter
 @ToString
 @NoArgsConstructor
-@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+//@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
 public class Ticket extends BaseEntity{
 
     @Id
@@ -31,6 +31,7 @@ public class Ticket extends BaseEntity{
     private String description;
     private TicketStatus status;
     private String openedBy;
+    private String assignedTo;
     private String closedBy;
     private DeviceType deviceType;
     private OsEnum os;
@@ -41,7 +42,6 @@ public class Ticket extends BaseEntity{
     private Set<String> attachments = new HashSet<>();
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
-    @JsonBackReference
     private Set<TicketMessage> messages = new HashSet<>();
 
 }

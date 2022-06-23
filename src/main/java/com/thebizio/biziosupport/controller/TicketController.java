@@ -37,4 +37,9 @@ public class TicketController {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.replyTicket(dto)));
     }
 
+    @GetMapping("thread/{ticketId}")
+    public ResponseEntity<RespMsgWithBodyDto> getThreadTicket(@PathVariable(name = "ticketId") String ticketId ) {
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getThreadTicket(ticketId)));
+    }
+
 }

@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.tickets
     description character varying(255) COLLATE pg_catalog."default",
     device_type integer,
     opened_by character varying(255) COLLATE pg_catalog."default",
+    assigned_to character varying(255) COLLATE pg_catalog."default",
     os integer,
     status integer,
     ticket_type integer,
