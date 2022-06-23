@@ -1,9 +1,6 @@
 package com.thebizio.biziosupport.controller;
 
-import com.thebizio.biziosupport.dto.TicketPaginationDto;
-import com.thebizio.biziosupport.dto.ResponseMessageDto;
-import com.thebizio.biziosupport.dto.TicketCreateDto;
-import com.thebizio.biziosupport.dto.TicketStatusChangeDto;
+import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.service.TicketService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +30,11 @@ public class TicketController {
     @PostMapping("change-status")
     public ResponseEntity<ResponseMessageDto> changeTicketStatus(@RequestBody @Valid TicketStatusChangeDto dto) {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.changeTicketStatus(dto)));
+    }
+
+    @PostMapping("reply")
+    public ResponseEntity<ResponseMessageDto> replyTicket(@RequestBody @Valid TicketReplyDto dto) {
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.replyTicket(dto)));
     }
 
 }

@@ -40,7 +40,7 @@ public class Ticket extends BaseEntity{
     @Convert(converter = SetConvertor.class)
     private Set<String> attachments = new HashSet<>();
 
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     @JsonBackReference
     private Set<TicketMessage> messages = new HashSet<>();
 

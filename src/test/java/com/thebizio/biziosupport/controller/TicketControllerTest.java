@@ -1,6 +1,7 @@
 package com.thebizio.biziosupport.controller;
 
 import com.thebizio.biziosupport.dto.TicketCreateDto;
+import com.thebizio.biziosupport.dto.TicketReplyDto;
 import com.thebizio.biziosupport.dto.TicketStatusChangeDto;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
@@ -71,8 +72,8 @@ class TicketControllerTest {
     @AfterAll
     public void afterAll() {
         keycloakMockService.mockStop();
-        ticketMessageRepo.deleteAll();
-        ticketRepo.deleteAll();
+//        ticketMessageRepo.deleteAll();
+//        ticketRepo.deleteAll();
     }
 
     @BeforeEach
@@ -196,5 +197,37 @@ class TicketControllerTest {
         dto.setStatus("");
         mvc.perform(utilTestService.setUp(post("/api/v1/tickets/change-status"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
+    }
+
+    @Test
+    @DisplayName("test for /tickets/reply")
+    public void reply_ticket_test() throws Exception {
+        Set<String> attachments = new HashSet<>();
+        attachments.add("D");
+
+        TicketReplyDto dto = new TicketReplyDto();
+        dto.setTicketId(ticket1.getId().toString());
+        dto.setMessage("This is coming from reply to ticket api");
+        dto.setAttachments(attachments);
+
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/tickets/reply"),dto)).andExpect(status().isUnauthorized());
+
+        //Two messages inside ticket
+        assertEquals(2,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/reply"),dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        //Three messages inside ticket
+        assertEquals(3,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
+
+        dto.setTicketId("");
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/reply"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.ticketId", is("must not be null or blank")));
+
+        dto.setTicketId(ticket1.getId().toString());
+        dto.setMessage("");
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/reply"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("must not be null or blank")));
+
     }
 }

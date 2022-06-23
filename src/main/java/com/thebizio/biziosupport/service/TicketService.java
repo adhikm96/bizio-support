@@ -1,12 +1,11 @@
 package com.thebizio.biziosupport.service;
 
-import com.thebizio.biziosupport.dto.TicketPaginationDto;
-import com.thebizio.biziosupport.dto.TicketCreateDto;
-import com.thebizio.biziosupport.dto.TicketDto;
-import com.thebizio.biziosupport.dto.TicketStatusChangeDto;
+import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.entity.Ticket;
+import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.TicketStatus;
 import com.thebizio.biziosupport.exception.NotFoundException;
+import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,7 +26,8 @@ public class TicketService {
     @Autowired
     private TicketRepo ticketRepo;
 
-
+    @Autowired
+    private TicketMessageRepo ticketMessageRepo;
     public Ticket findById(UUID id){
         return ticketRepo.findById(id).orElseThrow(() -> new NotFoundException("ticket not found"));
     }
@@ -94,5 +94,17 @@ public class TicketService {
         }else {
             throw new NotFoundException("status should be Open or Close");
         }
+    }
+
+    public String replyTicket(TicketReplyDto dto) {
+        Ticket ticket = findById(UUID.fromString(dto.getTicketId()));
+
+        TicketMessage tm = new TicketMessage();
+        tm.setMessage(dto.getMessage());
+        tm.setAttachments(dto.getAttachments());
+        tm.setOwner(utilService.getAuthUserEmail());
+        tm.setTicket(ticket);
+        ticketMessageRepo.save(tm);
+        return "OK";
     }
 }
