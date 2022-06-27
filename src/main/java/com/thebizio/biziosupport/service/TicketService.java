@@ -6,6 +6,8 @@ import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.TicketStatus;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,18 +28,15 @@ public class TicketService {
     private TicketRepo ticketRepo;
 
     @Autowired
+    private KeycloakBizioAdminClientService keycloakBizioAdminClientService;
+
+    @Autowired
     private ModelMapper modelMapper;
 
     @Autowired
     private TicketMessageRepo ticketMessageRepo;
     public Ticket findById(UUID id){
         return ticketRepo.findById(id).orElseThrow(() -> new NotFoundException("ticket not found"));
-    }
-
-    public Ticket toggleOrder(UUID ticketId, boolean status) {
-        Ticket ticket = findById(ticketId);
-        ticket.setStatus(status ? TicketStatus.OPEN : TicketStatus.CLOSED);
-        return ticketRepo.save(ticket);
     }
 
     public String createTicket(TicketCreateDto dto) {
@@ -87,11 +86,18 @@ public class TicketService {
     }
 
     public String changeTicketStatus(TicketStatusChangeDto dto) {
+        Ticket ticket = findById(dto.getTicketId());
+        String userEmail = utilService.getAuthUserEmail();
+
         if (dto.getStatus().equals("Open")){
-            toggleOrder(dto.getTicketId(),true);
+            ticket.setStatus(TicketStatus.OPEN);
+            ticket.setOpenedBy(userEmail);
+            ticketRepo.save(ticket);
             return "OK";
         } else if (dto.getStatus().equals("Close")) {
-            toggleOrder(dto.getTicketId(),false);
+            ticket.setStatus(TicketStatus.CLOSED);
+            ticket.setClosedBy(userEmail);
+            ticketRepo.save(ticket);
             return "OK";
         }else {
             throw new NotFoundException("status should be Open or Close");
@@ -113,5 +119,17 @@ public class TicketService {
     public Set<TicketMessage> getThreadTicket(String ticketId) {
         Set<TicketMessage> tms = findById(UUID.fromString(ticketId)).getMessages();
         return modelMapper.map(tms,new TypeToken<Set<TicketMessageDto>>(){}.getType());
+    }
+
+    public String assignTicket(TicketAssignDto dto) {
+        UserRepresentation userRepresentation = keycloakBizioAdminClientService.getUserRepresentation(dto.getAdminUserId());
+        if (userRepresentation.getEmail() == null){
+            throw new NotFoundException("admin user email not found");
+        }else {
+            Ticket ticket = findById(UUID.fromString(dto.getTicketId()));
+            ticket.setAssignedTo(userRepresentation.getEmail());
+            ticketRepo.save(ticket);
+            return "OK";
+        }
     }
 }

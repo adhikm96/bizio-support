@@ -1,5 +1,6 @@
 package com.thebizio.biziosupport.controller;
 
+import com.thebizio.biziosupport.dto.TicketAssignDto;
 import com.thebizio.biziosupport.dto.TicketCreateDto;
 import com.thebizio.biziosupport.dto.TicketReplyDto;
 import com.thebizio.biziosupport.dto.TicketStatusChangeDto;
@@ -8,10 +9,13 @@ import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.*;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import com.thebizio.biziosupport.repo.TicketRepo;
+import com.thebizio.biziosupport.service.KeycloakBizioAdminClientService;
 import com.thebizio.biziosupport.service.UtilService;
 import com.thebizio.biziosupport.util.KeycloakMockService;
 import com.thebizio.biziosupport.util.UtilTestService;
 import org.junit.jupiter.api.*;
+import org.keycloak.admin.client.resource.UserResource;
+import org.keycloak.representations.idm.UserRepresentation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,6 +28,7 @@ import java.util.*;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -62,6 +67,9 @@ class TicketControllerTest {
     @MockBean
     private UtilService utilService;
 
+    @MockBean
+    private KeycloakBizioAdminClientService keycloakBizioAdminClientService;
+
     @BeforeAll
     public void beforeAll() {
         keycloakMockService.mockStart();
@@ -72,8 +80,8 @@ class TicketControllerTest {
     @AfterAll
     public void afterAll() {
         keycloakMockService.mockStop();
-        ticketMessageRepo.deleteAll();
-        ticketRepo.deleteAll();
+//        ticketMessageRepo.deleteAll();
+//        ticketRepo.deleteAll();
     }
 
     @BeforeEach
@@ -255,4 +263,34 @@ class TicketControllerTest {
         .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket not found")));
     }
 
+    @Test
+    @DisplayName("test for /tickets/assign-ticket")
+    public void assign_ticket_test() throws Exception {
+        TicketAssignDto dto = new TicketAssignDto();
+        dto.setTicketId(ticket1.getId().toString());
+        dto.setAdminUserId(UUID.randomUUID().toString());
+
+        UserRepresentation userRepresentation = new UserRepresentation();
+        userRepresentation.setEmail("admin@gmail.com");
+        when(keycloakBizioAdminClientService.getUserRepresentation(any(String.class))).thenReturn(userRepresentation);
+
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/tickets/assign-ticket"),dto)).andExpect(status().isUnauthorized());
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/assign-ticket"),dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        userRepresentation.setEmail(null);
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("admin user email not found")));
+
+        dto.setTicketId("");
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.ticketId", is("must not be null or blank")));
+
+        dto.setTicketId(ticket1.getId().toString());
+        dto.setAdminUserId("");
+        mvc.perform(utilTestService.setUp(post("/api/v1/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
+
     }
+}

@@ -42,4 +42,9 @@ public class TicketController {
         return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getThreadTicket(ticketId)));
     }
 
+    @PostMapping("assign-ticket")
+    public ResponseEntity<ResponseMessageDto> assignTicket(@RequestBody @Valid TicketAssignDto dto) {
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.assignTicket(dto)));
+    }
+
 }
