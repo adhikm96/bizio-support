@@ -6,8 +6,6 @@ import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.TicketStatus;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
-import org.keycloak.admin.client.resource.UserResource;
-import org.keycloak.representations.idm.UserRepresentation;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,9 +24,6 @@ public class TicketService {
 
     @Autowired
     private TicketRepo ticketRepo;
-
-    @Autowired
-    private KeycloakBizioAdminClientService keycloakBizioAdminClientService;
 
     @Autowired
     private ModelMapper modelMapper;
@@ -122,14 +117,9 @@ public class TicketService {
     }
 
     public String assignTicket(TicketAssignDto dto) {
-        UserRepresentation userRepresentation = keycloakBizioAdminClientService.getUserRepresentation(dto.getAdminUserId());
-        if (userRepresentation.getEmail() == null){
-            throw new NotFoundException("admin user email not found");
-        }else {
             Ticket ticket = findById(UUID.fromString(dto.getTicketId()));
-            ticket.setAssignedTo(userRepresentation.getEmail());
+            ticket.setAssignedTo(dto.getAdminUserId());
             ticketRepo.save(ticket);
             return "OK";
         }
-    }
 }

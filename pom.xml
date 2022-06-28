@@ -74,13 +74,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>net.avalara.avatax</groupId>
-			<artifactId>avatax-rest-v2-api-java_2.11</artifactId>
-			<version>22.3.0</version>
-		</dependency>
-
-
-		<dependency>
 			<groupId>com.tngtech.keycloakmock</groupId>
 			<artifactId>mock</artifactId>
 			<scope>test</scope>
@@ -99,7 +92,6 @@
 			<artifactId>modelmapper</artifactId>
 			<version>3.0.0</version>
 		</dependency>
-
 	</dependencies>
 
 	<dependencyManagement>

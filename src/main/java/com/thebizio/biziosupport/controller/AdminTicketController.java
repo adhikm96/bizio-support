@@ -10,8 +10,8 @@ import javax.validation.Valid;
 import java.util.Optional;
 
 @RestController
-@RequestMapping("/api/v1/tickets")
-public class TicketController {
+@RequestMapping("/api/v1/admin/tickets")
+public class AdminTicketController {
 
     @Autowired
     private TicketService ticketService;
