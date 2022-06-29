@@ -10,8 +10,8 @@ import com.thebizio.biziosupport.enums.*;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import com.thebizio.biziosupport.repo.TicketRepo;
 import com.thebizio.biziosupport.service.UtilService;
-import com.thebizio.biziosupport.util.AdminKeycloakMockService;
-import com.thebizio.biziosupport.util.AdminUtilTestService;
+import com.thebizio.biziosupport.util.ClientKeycloakMockService;
+import com.thebizio.biziosupport.util.ClientUtilTestService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -33,16 +33,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AdminTicketControllerTest {
+public class ClientTicketControllerTest {
 
     @Autowired
     private MockMvc mvc;
 
     @Autowired
-    private AdminUtilTestService utilTestService;
+    private ClientUtilTestService utilTestService;
 
     @Autowired
-    private AdminKeycloakMockService keycloakMockService;
+    private ClientKeycloakMockService keycloakMockService;
 
     @Autowired
     private TicketRepo ticketRepo;
@@ -120,27 +120,27 @@ class AdminTicketControllerTest {
         dto.setDeviceType(DeviceType.MOBILE);
         dto.setAttachments(attachments);
 
-        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets"),dto)).andExpect(status().isUnauthorized());
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         dto.setTitle(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("must not be null or blank")));
 
         dto.setTitle("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("must not be null or blank")));
     }
 
     @Test
     @DisplayName("test for /tickets List")
     public void get_tickets_test() throws Exception {
-        mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/admin/tickets"))).andExpect(status().isUnauthorized());
+        mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/client/tickets"))).andExpect(status().isUnauthorized());
 
         //default page number 0 and page size 10
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(1)))
                 .andExpect(jsonPath("$.tickets[0].id", is(ticket1.getId().toString())))
                 .andExpect(jsonPath("$.tickets[0].title", is(ticket1.getTitle())))
@@ -151,7 +151,7 @@ class AdminTicketControllerTest {
 
         //pass page number 1 and page size 5
         List list = new ArrayList<>();
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?page=1&size=5"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?page=1&size=5"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", is(list)))
                 .andExpect(jsonPath("$.pageSize", is(5)));
     }
@@ -163,37 +163,37 @@ class AdminTicketControllerTest {
         dto.setTicketId(ticket1.getId());
         dto.setStatus("Close");
 
-        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isUnauthorized());
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isUnauthorized());
 
         //ticket status is open
         assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
 
         //close ticket
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         assertEquals(TicketStatus.CLOSED,ticketRepo.findById(ticket1.getId()).get().getStatus());
 
         //open ticket
         dto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
 
 
         dto.setTicketId(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketId", is("must not be null")));
 
         dto.setTicketId(ticket1.getId());
         dto.setStatus(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
 
         dto.setTicketId(ticket1.getId());
         dto.setStatus("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
     }
 
@@ -208,40 +208,40 @@ class AdminTicketControllerTest {
         dto.setMessage("This is coming from reply to ticket api");
         dto.setAttachments(attachments);
 
-        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isUnauthorized());
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isUnauthorized());
 
         //Two messages inside ticket
         assertEquals(1,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         //Three messages inside ticket
         assertEquals(2,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
 
         dto.setTicketId("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketId", is("must not be null or blank")));
 
         dto.setTicketId(ticket1.getId().toString());
         dto.setMessage("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("must not be null or blank")));
     }
 
     @Test
     @DisplayName("test for /tickets/thread/{ticketId}")
     public void get_thread_ticket_test() throws Exception {
-        mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/admin/tickets/thread/"+ticket1.getId()))).andExpect(status().isUnauthorized());
+        mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/client/tickets/thread/"+ticket1.getId()))).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket1.getId()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/"+ticket1.getId()))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj", hasSize(1)))
                 .andExpect(jsonPath("$.resObj[0].id", is(tm1.getId().toString())))
                 .andExpect(jsonPath("$.resObj[0].message", is(tm1.getMessage())))
                 .andExpect(jsonPath("$.resObj[0].ticketId", is(ticket1.getId().toString())));
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ UUID.randomUUID()))).andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket not found")));
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/"+ UUID.randomUUID()))).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket not found")));
     }
 
     @Test
@@ -252,20 +252,19 @@ class AdminTicketControllerTest {
         dto.setAdminUserId(UUID.randomUUID().toString());
 
 
-        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isUnauthorized());
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
 
         dto.setTicketId("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketId", is("must not be null or blank")));
 
         dto.setTicketId(ticket1.getId().toString());
         dto.setAdminUserId("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
-
     }
 }
