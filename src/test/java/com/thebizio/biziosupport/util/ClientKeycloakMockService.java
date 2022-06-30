@@ -1,6 +1,7 @@
 package com.thebizio.biziosupport.util;
 
 import com.tngtech.keycloakmock.api.KeycloakMock;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,6 +14,7 @@ import static com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig;
 @Configuration
 public class ClientKeycloakMockService {
 
+    @Value("${bizio-client.keycloak-realm}")
     private static final String REALM = "client";
 
     private static final String DEFAULT_REALM = "master";

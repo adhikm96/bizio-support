@@ -1,8 +1,0 @@
-{
-  "realm": "admin",
-  "bearer-only": true,
-  "auth-server-url": "http://localhost:8062/auth/",
-  "ssl-required": "external",
-  "resource": "web",
-  "confidential-port": 0
-}

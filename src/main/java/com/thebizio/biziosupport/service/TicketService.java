@@ -117,7 +117,7 @@ public class TicketService {
     }
 
     public String assignTicket(TicketAssignDto dto) {
-            Ticket ticket = findById(UUID.fromString(dto.getTicketId()));
+            Ticket ticket = findById(dto.getTicketId());
             ticket.setAssignedTo(dto.getAdminUserId());
             ticketRepo.save(ticket);
             return "OK";

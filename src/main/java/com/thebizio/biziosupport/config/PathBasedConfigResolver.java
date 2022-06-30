@@ -1,10 +1,12 @@
 package com.thebizio.biziosupport.config;
 
+import com.thebizio.biziosupport.exception.NotFoundException;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.keycloak.adapters.KeycloakDeployment;
 import org.keycloak.adapters.KeycloakDeploymentBuilder;
 import org.keycloak.adapters.OIDCHttpFacade;
 import org.keycloak.representations.adapters.config.AdapterConfig;
+import org.springframework.beans.factory.annotation.Value;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -15,6 +17,23 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 public class PathBasedConfigResolver implements KeycloakConfigResolver {
+
+    @Value("${bizio-admin.keycloak-realm}")
+    private String adminKeycloakRealm;
+    @Value("${bizio-admin.keycloak-auth-server-url}")
+    private String adminKeycloakAuthUrl;
+    @Value("${bizio-admin.keycloak-resource}")
+    private String adminKeycloakResource;
+    @Value("${bizio-admin.keycloak-bearer-only}")
+    private Boolean adminBearerOnly;
+    @Value("${bizio-center.keycloak-realm}")
+    private String clientKeycloakRealm;
+    @Value("${bizio-center.keycloak-auth-server-url}")
+    private String clientKeycloakAuthUrl;
+    @Value("${bizio-center.keycloak-resource}")
+    private String clientKeycloakResource;
+    @Value("${bizio-center.keycloak-bearer-only}")
+    private Boolean clientBearerOnly;
 
     private final ConcurrentHashMap<String, KeycloakDeployment> cache = new ConcurrentHashMap<>();
 
@@ -36,20 +55,25 @@ public class PathBasedConfigResolver implements KeycloakConfigResolver {
         }
 
         if (!cache.containsKey(realm)) {
+            if(realm.equals("admin")){
+                AdapterConfig ac = new AdapterConfig();
+                ac.setRealm(adminKeycloakRealm);
+                ac.setAuthServerUrl(adminKeycloakAuthUrl);
+                ac.setResource(adminKeycloakResource);
+                ac.setBearerOnly(adminBearerOnly);
+                cache.put(realm, KeycloakDeploymentBuilder.build(ac));
+            } else if (realm.equals("client")) {
+                AdapterConfig ac = new AdapterConfig();
+                ac.setRealm(clientKeycloakRealm);
+                ac.setAuthServerUrl(clientKeycloakAuthUrl);
+                ac.setResource(clientKeycloakResource);
+                ac.setBearerOnly(clientBearerOnly);
+                cache.put(realm, KeycloakDeploymentBuilder.build(ac));
 
-            InputStream is = getClass().getResourceAsStream("/" + realm + "-keycloak.json");
-
-//                System.out.println("Calling................");
-//                String text = new BufferedReader(
-//                        new InputStreamReader(is, StandardCharsets.UTF_8))
-//                        .lines()
-//                        .collect(Collectors.joining("\n"));
-//
-//                System.out.println(text);
-
-            cache.put(realm, KeycloakDeploymentBuilder.build(is));
+            }else {
+                throw new NotFoundException("realm not found");
+            }
         }
-
         return cache.get(realm);
     }
 

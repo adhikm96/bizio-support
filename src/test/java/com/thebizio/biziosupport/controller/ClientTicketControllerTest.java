@@ -248,7 +248,7 @@ public class ClientTicketControllerTest {
     @DisplayName("test for /tickets/assign-ticket")
     public void assign_ticket_test() throws Exception {
         TicketAssignDto dto = new TicketAssignDto();
-        dto.setTicketId(ticket1.getId().toString());
+        dto.setTicketId(ticket1.getId());
         dto.setAdminUserId(UUID.randomUUID().toString());
 
 
@@ -258,11 +258,11 @@ public class ClientTicketControllerTest {
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
 
-        dto.setTicketId("");
+        dto.setTicketId(null);
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.ticketId", is("must not be null or blank")));
+                .andExpect(jsonPath("$.ticketId", is("must not be null")));
 
-        dto.setTicketId(ticket1.getId().toString());
+        dto.setTicketId(ticket1.getId());
         dto.setAdminUserId("");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
