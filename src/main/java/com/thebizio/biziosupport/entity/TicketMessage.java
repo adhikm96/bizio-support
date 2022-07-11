@@ -1,5 +1,7 @@
 package com.thebizio.biziosupport.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.thebizio.biziosupport.convertor.SetConvertor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -15,7 +17,8 @@ import java.util.*;
 @Setter
 @ToString
 @NoArgsConstructor
-public class TicketMessage {
+@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+public class TicketMessage extends BaseEntity{
 
     @Id
     @GeneratedValue(generator = "uuid4")

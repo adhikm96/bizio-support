@@ -11,9 +11,11 @@ import org.keycloak.adapters.springsecurity.token.KeycloakAuthenticationToken;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.core.authority.mapping.SimpleAuthorityMapper;
@@ -30,8 +32,9 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.security.Principal;
 import java.util.Arrays;
 
+@DependsOn("keycloakConfigResolver")
 @KeycloakConfiguration
-@EnableConfigurationProperties(KeycloakSpringBootProperties.class)
+@ConditionalOnProperty(name = "keycloak.enabled", havingValue = "true", matchIfMissing = true)
 class KeycloakConfig extends KeycloakWebSecurityConfigurerAdapter {
 
 	@Value("${cors-allowed-origin}")
@@ -40,7 +43,6 @@ class KeycloakConfig extends KeycloakWebSecurityConfigurerAdapter {
 	@Override
 	protected void configure(HttpSecurity http) throws Exception {
 		super.configure(http);
-
 		http.csrf().disable().authorizeRequests().antMatchers("/actuator/health").permitAll().anyRequest()
 				.authenticated().and().cors().configurationSource(corsConfigurationSource());
 	}
@@ -49,7 +51,6 @@ class KeycloakConfig extends KeycloakWebSecurityConfigurerAdapter {
 	public void configureGlobal(AuthenticationManagerBuilder auth) {
 
 		KeycloakAuthenticationProvider keycloakAuthenticationProvider = keycloakAuthenticationProvider();
-
 		SimpleAuthorityMapper grantedAuthorityMapper = new SimpleAuthorityMapper();
 		grantedAuthorityMapper.setPrefix("ROLE_");
 		grantedAuthorityMapper.setConvertToUpperCase(true);

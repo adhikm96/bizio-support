@@ -12,19 +12,16 @@ import static com.tngtech.keycloakmock.api.ServerConfig.aServerConfig;
 import static com.tngtech.keycloakmock.api.TokenConfig.aTokenConfig;
 
 @Configuration
-public class KeycloakMockService {
+public class AdminKeycloakMockService {
 
-	@Value("${keycloak.realm}")
-	private static final String REALM = "login-app";
+	@Value("${bizio-admin.keycloak-realm}")
+	private static final String REALM = "admin";
 
 	private static final String DEFAULT_REALM = "master";
 
 	private static final int PORT = 8062;
 
 	private static final String HOST = "localhost";
-
-	@Value("${bizio-admin-role}")
-	private String adminRole;
 
 	private KeycloakMock mock = new KeycloakMock(
 			aServerConfig().withDefaultHostname(HOST).withPort(PORT).withDefaultRealm(DEFAULT_REALM).build());
@@ -37,29 +34,14 @@ public class KeycloakMockService {
 		mock.stop();
 	}
 
-	@Bean
-	public KeycloakMock getKeycloakMock() {
-//		mockStart();
-		return mock;
-	}
 
 	public String getToken(List<String> roles) {
 		if (roles == null) {
 			roles = new ArrayList<>();
-			roles.add(adminRole);
+			roles.add("admin");
 		}
 		return "Bearer " + mock.getAccessToken(aTokenConfig().withEmail("sample@email.com").withRealm(REALM)
 				.withRealmRoles(roles).withPreferredUsername("foobar").build());
 	}
 
-	public String getAdminToken() {
-		return "Bearer " + mock.getAccessToken(aTokenConfig().withEmail("sample@email.com").withRealm(REALM)
-				.withRealmRole(adminRole).withPreferredUsername("foobar").build());
-	}
-
-	public List<String> getAdminRole() {
-		List<String> roles = new ArrayList<>();
-		roles.add(adminRole);
-		return roles;
-	}
 }

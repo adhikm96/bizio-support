@@ -1,4 +1,6 @@
 package com.thebizio.biziosupport.entity;
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.thebizio.biziosupport.convertor.SetConvertor;
 import com.thebizio.biziosupport.enums.*;
 import lombok.Getter;
@@ -16,7 +18,8 @@ import java.util.*;
 @Setter
 @ToString
 @NoArgsConstructor
-public class Ticket{
+//@JsonIgnoreProperties({ "hibernateLazyInitializer", "handler" })
+public class Ticket extends BaseEntity{
 
     @Id
     @GeneratedValue(generator = "uuid4")
@@ -28,6 +31,7 @@ public class Ticket{
     private String description;
     private TicketStatus status;
     private String openedBy;
+    private String assignedTo;
     private String closedBy;
     private DeviceType deviceType;
     private OsEnum os;
@@ -37,6 +41,7 @@ public class Ticket{
     @Convert(converter = SetConvertor.class)
     private Set<String> attachments = new HashSet<>();
 
-    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private Set<TicketMessage> messages = new HashSet<>();
+
 }

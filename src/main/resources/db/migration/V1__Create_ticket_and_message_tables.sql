@@ -1,6 +1,10 @@
 CREATE TABLE IF NOT EXISTS public.tickets
 (
     id uuid NOT NULL,
+    created_by character varying(255) COLLATE pg_catalog."default",
+    created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_at timestamp without time zone,
+    modified_by character varying(255) COLLATE pg_catalog."default",
     application integer,
     attachments character varying(255) COLLATE pg_catalog."default",
     browser integer,
@@ -8,6 +12,7 @@ CREATE TABLE IF NOT EXISTS public.tickets
     description character varying(255) COLLATE pg_catalog."default",
     device_type integer,
     opened_by character varying(255) COLLATE pg_catalog."default",
+    assigned_to character varying(255) COLLATE pg_catalog."default",
     os integer,
     status integer,
     ticket_type integer,
@@ -18,6 +23,10 @@ CREATE TABLE IF NOT EXISTS public.tickets
 CREATE TABLE IF NOT EXISTS public.ticket_messages
 (
     id uuid NOT NULL,
+    created_by character varying(255) COLLATE pg_catalog."default",
+    created_at timestamp without time zone NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modified_at timestamp without time zone,
+    modified_by character varying(255) COLLATE pg_catalog."default",
     attachments character varying(255) COLLATE pg_catalog."default",
     message character varying(255) COLLATE pg_catalog."default",
     owner character varying(255) COLLATE pg_catalog."default",
