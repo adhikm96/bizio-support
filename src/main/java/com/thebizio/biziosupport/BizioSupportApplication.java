@@ -1,6 +1,5 @@
 package com.thebizio.biziosupport;
 
-import com.google.gson.JsonObject;
 import com.thebizio.biziosupport.config.PathBasedConfigResolver;
 import org.keycloak.adapters.KeycloakConfigResolver;
 import org.springframework.boot.SpringApplication;
