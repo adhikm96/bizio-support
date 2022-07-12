@@ -62,6 +62,7 @@ public class TicketService {
             dto.setTitle(ticket.getTitle());
             dto.setStatus(ticket.getStatus());
             dto.setConversation(String.valueOf(ticket.getMessages().size()));
+            dto.setType(ticket.getTicketType());
             ticketDtoList.add(dto);
         }
         return ticketDtoList;
