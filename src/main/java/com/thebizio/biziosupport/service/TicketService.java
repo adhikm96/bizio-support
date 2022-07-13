@@ -44,7 +44,9 @@ public class TicketService {
         ticket.setApplication(dto.getApplication());
         ticket.setBrowser(dto.getBrowser());
         ticket.setAttachments(dto.getAttachments());
-
+        ticket.setOsVersion(dto.getOsVersion());
+        ticket.setApplicationVersion(dto.getApplicationVersion());
+        ticket.setBrowserVersion(dto.getBrowserVersion());
         ticket.setStatus(TicketStatus.OPEN);
         ticket.setOpenedBy(utilService.getAuthUserEmail());
 

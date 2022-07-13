@@ -25,4 +25,7 @@ public class TicketCreateDto {
     private ApplicationEnum application;
     private BrowserEnum browser;
     private Set<String> attachments = new HashSet<>();
+    private String osVersion;
+    private String applicationVersion;
+    private String browserVersion;
 }

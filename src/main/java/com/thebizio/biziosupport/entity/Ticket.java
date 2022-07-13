@@ -38,6 +38,10 @@ public class Ticket extends BaseEntity{
     private ApplicationEnum application;
     private BrowserEnum browser;
 
+    private String osVersion;
+    private String applicationVersion;
+    private String browserVersion;
+
     @Convert(converter = SetConvertor.class)
     private Set<String> attachments = new HashSet<>();
 
