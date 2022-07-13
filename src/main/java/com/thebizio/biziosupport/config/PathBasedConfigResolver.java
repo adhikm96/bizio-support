@@ -46,7 +46,13 @@ public class PathBasedConfigResolver implements KeycloakConfigResolver {
         String path = request.getURI();
         int multitenantIndex = path.indexOf("v1/");
         if (multitenantIndex == -1) {
-            throw new IllegalStateException("Not able to resolve realm from the request path!");
+            AdapterConfig ac = new AdapterConfig();
+            ac.setRealm(clientKeycloakRealm);
+            ac.setAuthServerUrl(clientKeycloakAuthUrl);
+            ac.setResource(clientKeycloakResource);
+            ac.setBearerOnly(clientBearerOnly);
+            cache.put("client", KeycloakDeploymentBuilder.build(ac));
+            return cache.get("client");
         }
 
         String realm = path.substring(path.indexOf("v1/")).split("/")[1];
