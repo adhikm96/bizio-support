@@ -1,6 +1,7 @@
 package com.thebizio.biziosupport.dto;
 
 import com.thebizio.biziosupport.enums.TicketStatus;
+import com.thebizio.biziosupport.enums.TicketType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -16,4 +17,5 @@ public class TicketDto {
     private String attachments;
     private String conversation;
     private TicketStatus status;
+    private TicketType type;
 }
