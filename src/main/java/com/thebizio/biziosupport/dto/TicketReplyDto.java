@@ -14,7 +14,7 @@ public class TicketReplyDto {
 
     @NotNull(message = "must not be null or blank")
     @NotBlank(message = "must not be null or blank")
-    private String ticketId;
+    private String ticketRefNo;
 
     @NotNull(message = "must not be null or blank")
     @NotBlank(message = "must not be null or blank")

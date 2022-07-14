@@ -34,6 +34,10 @@ public class TicketService {
         return ticketRepo.findById(id).orElseThrow(() -> new NotFoundException("ticket not found"));
     }
 
+    public Ticket findByTicketRefNo(String ticketRefNo){
+        return ticketRepo.findByTicketRefNo(ticketRefNo).orElseThrow(() -> new NotFoundException("ticket ref no found"));
+    }
+
     public String createTicket(TicketCreateDto dto) {
         Ticket ticket = new Ticket();
         ticket.setTicketType(dto.getTicketType());
@@ -59,6 +63,7 @@ public class TicketService {
 
         for (Ticket ticket : tickets.getContent()) {
             TicketDto dto = new TicketDto();
+            dto.setId(ticket.getId());
             dto.setAttachments(String.valueOf(ticket.getAttachments().size()));
             dto.setTitle(ticket.getTitle());
             dto.setStatus(ticket.getStatus());
@@ -84,7 +89,7 @@ public class TicketService {
     }
 
     public String changeTicketStatus(TicketStatusChangeDto dto) {
-        Ticket ticket = findById(dto.getTicketId());
+        Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userEmail = utilService.getAuthUserEmail();
 
         if (dto.getStatus().equals("Open")){
@@ -103,8 +108,7 @@ public class TicketService {
     }
 
     public String replyTicket(TicketReplyDto dto) {
-        Ticket ticket = findById(UUID.fromString(dto.getTicketId()));
-
+        Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         TicketMessage tm = new TicketMessage();
         tm.setMessage(dto.getMessage());
         tm.setAttachments(dto.getAttachments());
@@ -120,7 +124,7 @@ public class TicketService {
     }
 
     public String assignTicket(TicketAssignDto dto) {
-            Ticket ticket = findById(dto.getTicketId());
+        Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
             ticket.setAssignedTo(dto.getAdminUserId());
             ticketRepo.save(ticket);
             return "OK";

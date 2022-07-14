@@ -12,6 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 public class TicketDto {
 
+    private UUID id;
     private String title;
     private String attachments;
     private String conversation;
