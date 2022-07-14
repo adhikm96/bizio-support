@@ -3,10 +3,13 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.thebizio.biziosupport.convertor.SetConvertor;
 import com.thebizio.biziosupport.enums.*;
+import com.thebizio.biziosupport.generator.SecureRandomReferenceIdGenerator;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import org.hibernate.annotations.GenerationTime;
+import org.hibernate.annotations.GeneratorType;
 
 import javax.persistence.*;
 import java.util.*;
@@ -25,6 +28,10 @@ public class Ticket extends BaseEntity{
     @GeneratedValue(generator = "uuid4")
     @Column(columnDefinition = "uuid")
     private UUID id;
+
+    @GeneratorType(type = SecureRandomReferenceIdGenerator.class, when = GenerationTime.INSERT)
+    @Column(name = "ticket_ref_no", unique = true, nullable = false, updatable = false, length = 64)
+    private String ticketRefNo;
 
     private TicketType ticketType;
     private String title;
