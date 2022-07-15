@@ -18,6 +18,7 @@ public class TicketAssignDto {
     @NotBlank(message = "must not be null or blank")
     private String adminUserId;
 
-    @NotNull
-    private UUID ticketId;
+    @NotNull(message = "must not be null or blank")
+    @NotBlank(message = "must not be null or blank")
+    private String ticketRefNo;
 }

@@ -18,4 +18,5 @@ public class TicketDto {
     private String conversation;
     private TicketStatus status;
     private TicketType type;
+    private String ticketRefNo;
 }

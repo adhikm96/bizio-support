@@ -12,8 +12,9 @@ import java.util.UUID;
 @NoArgsConstructor
 public class TicketStatusChangeDto {
 
-    @NotNull
-    private UUID ticketId;
+    @NotNull(message = "must not be null or blank")
+    @NotBlank(message = "must not be null or blank")
+    private String ticketRefNo;
 
     @NotNull(message = "must not be null or blank")
     @NotBlank(message = "must not be null or blank")

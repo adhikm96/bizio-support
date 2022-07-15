@@ -37,9 +37,9 @@ public class AdminTicketController {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.replyTicket(dto)));
     }
 
-    @GetMapping("thread/{ticketId}")
-    public ResponseEntity<RespMsgWithBodyDto> getThreadTicket(@PathVariable(name = "ticketId") String ticketId ) {
-        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getThreadTicket(ticketId)));
+    @GetMapping("thread/{ticketRefNo}")
+    public ResponseEntity<RespMsgWithBodyDto> getThreadTicket(@PathVariable(name = "ticketRefNo") String ticketRefNo ) {
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getThreadTicket(ticketRefNo)));
     }
 
     @PostMapping("assign-ticket")

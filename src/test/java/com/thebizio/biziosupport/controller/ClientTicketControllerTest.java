@@ -160,7 +160,7 @@ public class ClientTicketControllerTest {
     @DisplayName("test for /tickets/change-status")
     public void change_ticket_status_test() throws Exception {
         TicketStatusChangeDto dto = new TicketStatusChangeDto();
-        dto.setTicketId(ticket1.getId());
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setStatus("Close");
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isUnauthorized());
@@ -181,17 +181,16 @@ public class ClientTicketControllerTest {
 
         assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
 
-
-        dto.setTicketId(null);
+        dto.setTicketRefNo(null);
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.ticketId", is("must not be null")));
+                .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
-        dto.setTicketId(ticket1.getId());
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setStatus(null);
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
 
-        dto.setTicketId(ticket1.getId());
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setStatus("");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
@@ -204,7 +203,7 @@ public class ClientTicketControllerTest {
         attachments.add("D");
 
         TicketReplyDto dto = new TicketReplyDto();
-        dto.setTicketId(ticket1.getId().toString());
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setMessage("This is coming from reply to ticket api");
         dto.setAttachments(attachments);
 
@@ -218,11 +217,11 @@ public class ClientTicketControllerTest {
         //Three messages inside ticket
         assertEquals(2,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
 
-        dto.setTicketId("");
+        dto.setTicketRefNo("");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.ticketId", is("must not be null or blank")));
+                .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
-        dto.setTicketId(ticket1.getId().toString());
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setMessage("");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("must not be null or blank")));
@@ -248,7 +247,7 @@ public class ClientTicketControllerTest {
     @DisplayName("test for /tickets/assign-ticket")
     public void assign_ticket_test() throws Exception {
         TicketAssignDto dto = new TicketAssignDto();
-        dto.setTicketId(ticket1.getId());
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setAdminUserId(UUID.randomUUID().toString());
 
 
@@ -257,12 +256,11 @@ public class ClientTicketControllerTest {
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
-
-        dto.setTicketId(null);
+        dto.setTicketRefNo(null);
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.ticketId", is("must not be null")));
+                .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
-        dto.setTicketId(ticket1.getId());
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setAdminUserId("");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
