@@ -118,8 +118,8 @@ public class TicketService {
         return "OK";
     }
 
-    public Set<TicketMessage> getThreadTicket(String ticketId) {
-        Set<TicketMessage> tms = findById(UUID.fromString(ticketId)).getMessages();
+    public Set<TicketMessage> getThreadTicket(String ticketRefNo) {
+        Set<TicketMessage> tms = findByTicketRefNo(ticketRefNo).getMessages();
         return modelMapper.map(tms,new TypeToken<Set<TicketMessageDto>>(){}.getType());
     }
 
