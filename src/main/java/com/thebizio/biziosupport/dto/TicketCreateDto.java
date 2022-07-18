@@ -19,6 +19,9 @@ public class TicketCreateDto {
     @NotNull(message = "must not be null or blank")
     @NotBlank(message = "must not be null or blank")
     private String title;
+
+    @NotNull(message = "must not be null or blank")
+    @NotBlank(message = "must not be null or blank")
     private String description;
     private DeviceType deviceType;
     private OsEnum os;
