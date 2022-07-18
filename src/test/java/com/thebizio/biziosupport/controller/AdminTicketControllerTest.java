@@ -231,17 +231,18 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/thread/{ticketId}")
     public void get_thread_ticket_test() throws Exception {
-        mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/admin/tickets/thread/"+ticket1.getId()))).andExpect(status().isUnauthorized());
+        mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/admin/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket1.getId()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj", hasSize(1)))
                 .andExpect(jsonPath("$.resObj[0].id", is(tm1.getId().toString())))
                 .andExpect(jsonPath("$.resObj[0].message", is(tm1.getMessage())))
-                .andExpect(jsonPath("$.resObj[0].ticketId", is(ticket1.getId().toString())));
+                .andExpect(jsonPath("$.resObj[0].ticketId", is(ticket1.getId().toString())))
+                .andExpect(jsonPath("$.resObj[0].ticketRefNo", is(ticket1.getTicketRefNo())));
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ UUID.randomUUID()))).andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket not found")));
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/T123456789"))).andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket ref no found")));
     }
 
     @Test

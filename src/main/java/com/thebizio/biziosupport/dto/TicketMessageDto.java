@@ -17,6 +17,7 @@ public class TicketMessageDto {
     private String owner;
     private Set<String> attachments = new HashSet<>();
     private UUID ticketId;
+    private String TicketRefNo;
     private LocalDateTime createdDate;
 
 }
