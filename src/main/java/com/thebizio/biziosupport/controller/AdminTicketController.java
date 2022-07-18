@@ -47,4 +47,9 @@ public class AdminTicketController {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.assignTicket(dto)));
     }
 
+    @GetMapping("/{ticketRefNo}")
+    public ResponseEntity<RespMsgWithBodyDto> getTicket(@PathVariable(name = "ticketRefNo") String ticketRefNo ) {
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicket(ticketRefNo)));
+    }
+
 }

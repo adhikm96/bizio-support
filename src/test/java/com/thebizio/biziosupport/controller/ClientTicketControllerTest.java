@@ -228,7 +228,7 @@ public class ClientTicketControllerTest {
     }
 
     @Test
-    @DisplayName("test for /tickets/thread/{ticketId}")
+    @DisplayName("test for /tickets/thread/{ticketRefNo}")
     public void get_thread_ticket_test() throws Exception {
         mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/client/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isUnauthorized());
 
@@ -265,5 +265,17 @@ public class ClientTicketControllerTest {
         dto.setAdminUserId("");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
+    }
+
+    @Test
+    @DisplayName("test for /tickets/{ticketRefNo}")
+    public void get_ticket_test() throws Exception {
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
+                .andExpect(jsonPath("$.resObj.id", is(ticket1.getId().toString())))
+                .andExpect(jsonPath("$.resObj.ticketRefNo", is(ticket1.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj.title", is(ticket1.getTitle())))
+                .andExpect(jsonPath("$.resObj.description", is(ticket1.getDescription())))
+                .andExpect(jsonPath("$.resObj.status", is(ticket1.getStatus().toString())));
     }
 }

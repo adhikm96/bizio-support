@@ -129,4 +129,10 @@ public class TicketService {
             ticketRepo.save(ticket);
             return "OK";
         }
+
+    public TicketDetailsDto getTicket(String ticketRefNo) {
+        Ticket ticket = findByTicketRefNo(ticketRefNo);
+        return modelMapper.map(ticket,TicketDetailsDto.class);
+
+    }
 }
