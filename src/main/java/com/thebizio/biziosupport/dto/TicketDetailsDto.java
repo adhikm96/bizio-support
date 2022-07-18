@@ -10,6 +10,7 @@ import org.hibernate.annotations.GenerationTime;
 import org.hibernate.annotations.GeneratorType;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -35,5 +36,6 @@ public class TicketDetailsDto {
     private String applicationVersion;
     private String browserVersion;
     private Set<String> attachments = new HashSet<>();
+    private LocalDateTime createdDate;
 
 }
