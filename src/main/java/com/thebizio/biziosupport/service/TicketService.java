@@ -14,6 +14,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import com.thebizio.biziosupport.repo.TicketRepo;
 
+import javax.transaction.Transactional;
 import java.util.*;
 
 @Service
@@ -38,6 +39,7 @@ public class TicketService {
         return ticketRepo.findByTicketRefNo(ticketRefNo).orElseThrow(() -> new NotFoundException("ticket ref no found"));
     }
 
+    @Transactional
     public String createTicket(TicketCreateDto dto) {
         Ticket ticket = new Ticket();
         ticket.setTicketType(dto.getTicketType());
@@ -53,8 +55,14 @@ public class TicketService {
         ticket.setBrowserVersion(dto.getBrowserVersion());
         ticket.setStatus(TicketStatus.OPEN);
         ticket.setOpenedBy(utilService.getAuthUserEmail());
-
         ticketRepo.save(ticket);
+
+        TicketMessage tm = new TicketMessage();
+        tm.setMessage(ticket.getDescription());
+        tm.setOwner(ticket.getOpenedBy());
+        tm.setAttachments(ticket.getAttachments());
+        tm.setTicket(ticket);
+        ticketMessageRepo.save(tm);
         return "OK";
     }
 
@@ -125,14 +133,13 @@ public class TicketService {
 
     public String assignTicket(TicketAssignDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
-            ticket.setAssignedTo(dto.getAdminUserId());
-            ticketRepo.save(ticket);
-            return "OK";
-        }
+        ticket.setAssignedTo(dto.getAdminUserId());
+        ticketRepo.save(ticket);
+        return "OK";
+    }
 
     public TicketDetailsDto getTicket(String ticketRefNo) {
         Ticket ticket = findByTicketRefNo(ticketRefNo);
         return modelMapper.map(ticket,TicketDetailsDto.class);
-
     }
 }

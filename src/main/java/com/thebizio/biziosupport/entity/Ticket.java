@@ -12,6 +12,8 @@ import org.hibernate.annotations.GenerationTime;
 import org.hibernate.annotations.GeneratorType;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.*;
 
 
@@ -34,7 +36,13 @@ public class Ticket extends BaseEntity{
     private String ticketRefNo;
 
     private TicketType ticketType;
+
+    @NotNull(message = "must not be null or blank")
+    @NotBlank(message = "must not be null or blank")
     private String title;
+
+    @NotNull(message = "must not be null or blank")
+    @NotBlank(message = "must not be null or blank")
     private String description;
     private TicketStatus status;
     private String openedBy;
