@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -89,7 +90,17 @@ class AdminTicketControllerTest {
         ticket1.setDescription("Ticket1 description");
         ticket1.setStatus(TicketStatus.OPEN);
         ticket1.setAttachments(attachments);
+        ticket1.setOpenedBy("user1");
         ticketRepo.save(ticket1);
+
+        Ticket ticket2 = new Ticket();
+        ticket2.setTitle("Ticket2");
+        ticket2.setDescription("Ticket2 description");
+        ticket2.setStatus(TicketStatus.CLOSED);
+        ticket2.setAttachments(attachments);
+        ticket2.setOpenedBy("user2");
+        ticket2.setAssignedTo("user3");
+        ticketRepo.save(ticket2);
 
         System.out.println("-----------------");
         System.out.println("MESSAGE 1 CREATED");
@@ -100,6 +111,7 @@ class AdminTicketControllerTest {
         ticketMessageRepo.save(tm1);
 
         when(utilService.getAuthUserEmail()).thenReturn("Testing@gmail.com");
+        when(utilService.getAuthUserName()).thenReturn("TestingUser");
     }
 
     @Test
@@ -141,7 +153,7 @@ class AdminTicketControllerTest {
 
         //default page number 0 and page size 10
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets"))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.tickets", hasSize(1)))
+                .andExpect(jsonPath("$.tickets", hasSize(2)))
                 .andExpect(jsonPath("$.tickets[0].id", is(ticket1.getId().toString())))
                 .andExpect(jsonPath("$.tickets[0].title", is(ticket1.getTitle())))
                 .andExpect(jsonPath("$.tickets[0].attachments", is("3")))
@@ -154,6 +166,38 @@ class AdminTicketControllerTest {
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?page=1&size=5"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", is(list)))
                 .andExpect(jsonPath("$.pageSize", is(5)));
+
+        //status open filter
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
+
+        //status closed filter
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Closed"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
+
+        //ticketRefNo filter
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?ticketRefNo="+ticket1.getTicketRefNo()))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
+
+        //userName filter
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
+
+        //assignedTo filter
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?assignedTo=user3"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
+
+        //status open and UserName filter
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
+
+        //status open and assignedTo filter
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&assignedTo=user3"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
+
+        //status open and assignedTo and UserName filter
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&assignedTo=user3&userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
     }
 
     @Test

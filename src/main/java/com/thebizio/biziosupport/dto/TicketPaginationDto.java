@@ -12,4 +12,7 @@ public class TicketPaginationDto {
     private List<TicketDto> tickets;
     private Integer totalPages;
     private Integer pageSize;
+    private Integer open;
+    private Integer closed;
+    private Integer totalTickets;
 }

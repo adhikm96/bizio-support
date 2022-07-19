@@ -10,12 +10,14 @@ import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import com.thebizio.biziosupport.repo.TicketRepo;
 
-import javax.transaction.Transactional;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TicketService {
@@ -71,22 +73,121 @@ public class TicketService {
             dto.setConversation(String.valueOf(ticket.getMessages().size()));
             dto.setType(ticket.getTicketType());
             dto.setTicketRefNo(ticket.getTicketRefNo());
+            dto.setCreatedBy(ticket.getCreatedBy());
+            dto.setModifiedBy(ticket.getModifiedBy());
+            dto.setCreatedDate(ticket.getCreatedDate());
+            dto.setLastModifiedDate(ticket.getLastModifiedDate());
+            dto.setOpenedBy(ticket.getOpenedBy());
+            dto.setAssignedTo(ticket.getAssignedTo());
             ticketDtoList.add(dto);
         }
         return ticketDtoList;
     }
 
-    public TicketPaginationDto mapObjectToPagination(List<TicketDto> tickets, Integer pageSize, Integer totalPages){
+    public TicketPaginationDto mapObjectToPagination(List<TicketDto> tickets, Integer pageSize, Integer totalPages,
+                                                     Integer totalOpen,Integer totalClosed,Integer totalTickets){
         TicketPaginationDto dto = new TicketPaginationDto();
         dto.setTickets(tickets);
         dto.setTotalPages(totalPages);
         dto.setPageSize(pageSize);
+        dto.setOpen(totalOpen);
+        dto.setClosed(totalClosed);
+        dto.setTotalTickets(totalTickets);
         return dto;
     }
 
-    public TicketPaginationDto getAllTicket(Optional<Integer> page, Optional<Integer> size) {
-        Page<Ticket> tickets = ticketRepo.findAll(PageRequest.of(page.orElse(0),size.orElse(10)));
-        return mapObjectToPagination(mapTicketEntityToDto(tickets),tickets.getSize(),tickets.getTotalPages());
+    public TicketPaginationDto getAllTicket(Optional<Integer> page, Optional<Integer> size, String user,
+                                            Optional<String> ticketRefNo,Optional<String> status,Optional<String> userName,
+                                            Optional<String> assignedTo) {
+
+        Pageable paging = PageRequest.of(page.orElse(0),size.orElse(10));
+        Page<Ticket> tickets = null;
+        Integer totalOpen = 0;
+        Integer totalClosed = 0;
+        Integer totalTickets = 0;
+
+
+        if(user.equals("admin")){
+            tickets = ticketRepo.findAll(paging);
+            Integer[] ticket_counts = setTicketCounts(tickets);
+            totalOpen = ticket_counts[0];
+            totalClosed = ticket_counts[1];
+            totalTickets = ticket_counts[2];
+
+            if (ticketRefNo.isPresent()){
+                Optional<Ticket> t = ticketRepo.findByTicketRefNo(ticketRefNo.get());
+                tickets = addTicketToPage(t,tickets);
+            } else if (status.isPresent()) {
+                tickets = ticketRepo.findByStatus(paging,getTicketOrderStatusEnum(status.get()));
+            } else if (userName.isPresent()) {
+                tickets = ticketRepo.findByOpenedBy(paging,userName.get());
+            } else if (assignedTo.isPresent()) {
+                tickets = ticketRepo.findByAssignedTo(paging,assignedTo.get());
+            }else if (userName.isPresent() && status.isPresent()) {
+                tickets = ticketRepo.findByOpenedByAndStatus(paging,userName.get(),getTicketOrderStatusEnum(status.get()));
+            }else if (assignedTo.isPresent() && status.isPresent()) {
+                tickets = ticketRepo.findByAssignedToAndStatus(paging,assignedTo.get(),getTicketOrderStatusEnum(status.get()));
+            }else if (userName.isPresent() && assignedTo.isPresent() && status.isPresent()) {
+                tickets = ticketRepo.findByOpenedByAndAssignedToAndStatus(paging,userName.get(),assignedTo.get(),getTicketOrderStatusEnum(status.get()));
+            }
+
+        } else if (user.equals("client")) {
+            String loggedUserName = utilService.getAuthUserName();
+            tickets = ticketRepo.findByOpenedBy(paging,loggedUserName);
+            Integer[] ticket_counts = setTicketCounts(tickets);
+            totalOpen = ticket_counts[0];
+            totalClosed = ticket_counts[1];
+            totalTickets = ticket_counts[2];
+
+            if (ticketRefNo.isPresent()){
+                Optional<Ticket> t = ticketRepo.findByOpenedByAndTicketRefNo(loggedUserName,ticketRefNo.get());
+                tickets = addTicketToPage(t,tickets);
+            } else if (status.isPresent()) {
+                tickets = ticketRepo.findByOpenedByAndStatus(paging,loggedUserName,getTicketOrderStatusEnum(status.get()));
+            } else if (assignedTo.isPresent()) {
+                tickets = ticketRepo.findByOpenedByAndAssignedTo(paging,loggedUserName,assignedTo.get());
+            }else if (assignedTo.isPresent() && status.isPresent()) {
+                tickets = ticketRepo.findByOpenedByAndAssignedToAndStatus(paging,loggedUserName,assignedTo.get(),getTicketOrderStatusEnum(status.get()));
+            }
+
+        }else{
+            return null;
+        }
+
+        return mapObjectToPagination(mapTicketEntityToDto(tickets),tickets.getSize(),
+                tickets.getTotalPages(),totalOpen,totalClosed,totalTickets);
+    }
+
+    public Page<Ticket> addTicketToPage(Optional<Ticket> t, Page<Ticket> tickets){
+        List<Ticket> ticketList = new ArrayList<>();
+        if (t.isPresent()){
+            ticketList.add(t.get());
+            tickets = new PageImpl<>(ticketList);
+            return tickets;
+        }else {
+            tickets = new PageImpl<>(ticketList);
+            return tickets;
+        }
+    }
+
+    public Integer[] setTicketCounts(Page<Ticket> tickets){
+        Integer[] ticket_counts = new Integer[3];
+        ticket_counts[0] = tickets.getContent().stream().filter(ticket ->
+                ticket.getStatus() == TicketStatus.OPEN ).collect(Collectors.toList()).size();
+        ticket_counts[1] = tickets.getContent().stream().filter(ticket ->
+                ticket.getStatus() == TicketStatus.CLOSED ).collect(Collectors.toList()).size();
+        ticket_counts[2] = tickets.getContent().size();
+        return ticket_counts;
+    }
+
+    public TicketStatus getTicketOrderStatusEnum(String status){
+        if (status.equals("Open")){
+            return TicketStatus.OPEN;
+        } else if (status.equals("Closed")) {
+            return TicketStatus.CLOSED;
+        }else {
+            throw new NotFoundException("ticket status not found");
+        }
     }
 
     public String changeTicketStatus(TicketStatusChangeDto dto) {

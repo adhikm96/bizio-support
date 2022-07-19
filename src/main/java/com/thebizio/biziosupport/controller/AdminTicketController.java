@@ -23,8 +23,10 @@ public class AdminTicketController {
     }
 
     @GetMapping
-    public ResponseEntity<TicketPaginationDto> getAllTicket(@RequestParam Optional<Integer> page, Optional<Integer> size) {
-        return ResponseEntity.ok(ticketService.getAllTicket(page, size));
+    public ResponseEntity<TicketPaginationDto> getAllTicket(@RequestParam Optional<Integer> page, Optional<Integer> size,
+                                                            Optional<String> ticketRefNo,Optional<String> status,Optional<String> userName,
+                                                            Optional<String> assignedTo) {
+        return ResponseEntity.ok(ticketService.getAllTicket(page, size, "admin",ticketRefNo,status,userName,assignedTo));
     }
 
     @PostMapping("change-status")

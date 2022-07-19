@@ -22,8 +22,10 @@ public class ClientTicketController {
     }
 
     @GetMapping
-    public ResponseEntity<TicketPaginationDto> getAllTicket(@RequestParam Optional<Integer> page, Optional<Integer> size) {
-        return ResponseEntity.ok(ticketService.getAllTicket(page, size));
+    public ResponseEntity<TicketPaginationDto> getAllTicket(@RequestParam Optional<Integer> page, Optional<Integer> size,
+                                                            Optional<String> ticketRefNo,Optional<String> status,Optional<String> username,
+                                                            Optional<String> assignedTo) {
+        return ResponseEntity.ok(ticketService.getAllTicket(page, size,"client",ticketRefNo,status,username,assignedTo));
     }
 
     @PostMapping("change-status")
