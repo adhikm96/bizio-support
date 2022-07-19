@@ -122,12 +122,9 @@ public class ClientTicketControllerTest {
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets"),dto)).andExpect(status().isUnauthorized());
 
-        assertEquals(1,ticketMessageRepo.findAll().size());
-
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
-        assertEquals(2,ticketMessageRepo.findAll().size());
         dto.setTitle(null);
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("must not be null or blank")));
