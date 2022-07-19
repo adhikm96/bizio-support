@@ -39,7 +39,6 @@ public class TicketService {
         return ticketRepo.findByTicketRefNo(ticketRefNo).orElseThrow(() -> new NotFoundException("ticket ref no found"));
     }
 
-    @Transactional
     public String createTicket(TicketCreateDto dto) {
         Ticket ticket = new Ticket();
         ticket.setTicketType(dto.getTicketType());
@@ -57,12 +56,6 @@ public class TicketService {
         ticket.setOpenedBy(utilService.getAuthUserEmail());
         ticketRepo.save(ticket);
 
-        TicketMessage tm = new TicketMessage();
-        tm.setMessage(ticket.getDescription());
-        tm.setOwner(ticket.getOpenedBy());
-        tm.setAttachments(ticket.getAttachments());
-        tm.setTicket(ticket);
-        ticketMessageRepo.save(tm);
         return "OK";
     }
 
