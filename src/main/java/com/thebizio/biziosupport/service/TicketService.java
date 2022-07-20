@@ -55,7 +55,7 @@ public class TicketService {
         ticket.setApplicationVersion(dto.getApplicationVersion());
         ticket.setBrowserVersion(dto.getBrowserVersion());
         ticket.setStatus(TicketStatus.OPEN);
-        ticket.setOpenedBy(utilService.getAuthUserEmail());
+        ticket.setOpenedBy(utilService.getAuthUserName());
         ticketRepo.save(ticket);
 
         return "OK";
