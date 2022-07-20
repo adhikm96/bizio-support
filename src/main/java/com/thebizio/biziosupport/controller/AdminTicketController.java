@@ -54,4 +54,8 @@ public class AdminTicketController {
         return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicket(ticketRefNo)));
     }
 
+    @GetMapping("/metrics")
+    public ResponseEntity<RespMsgWithBodyDto> getTicketMetrics() {
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicketMetrics("admin")));
+    }
 }

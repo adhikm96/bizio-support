@@ -84,15 +84,11 @@ public class TicketService {
         return ticketDtoList;
     }
 
-    public TicketPaginationDto mapObjectToPagination(List<TicketDto> tickets, Integer pageSize, Integer totalPages,
-                                                     Integer totalOpen,Integer totalClosed,Integer totalTickets){
+    public TicketPaginationDto mapObjectToPagination(List<TicketDto> tickets, Integer pageSize, Integer totalPages){
         TicketPaginationDto dto = new TicketPaginationDto();
         dto.setTickets(tickets);
         dto.setTotalPages(totalPages);
         dto.setPageSize(pageSize);
-        dto.setOpen(totalOpen);
-        dto.setClosed(totalClosed);
-        dto.setTotalTickets(totalTickets);
         return dto;
     }
 
@@ -102,17 +98,9 @@ public class TicketService {
 
         Pageable paging = PageRequest.of(page.orElse(0),size.orElse(10));
         Page<Ticket> tickets = null;
-        Integer totalOpen = 0;
-        Integer totalClosed = 0;
-        Integer totalTickets = 0;
-
 
         if(user.equals("admin")){
             tickets = ticketRepo.findAll(paging);
-            Integer[] ticket_counts = setTicketCounts(tickets);
-            totalOpen = ticket_counts[0];
-            totalClosed = ticket_counts[1];
-            totalTickets = ticket_counts[2];
 
             if (ticketRefNo.isPresent()){
                 Optional<Ticket> t = ticketRepo.findByTicketRefNo(ticketRefNo.get());
@@ -134,11 +122,6 @@ public class TicketService {
         } else if (user.equals("client")) {
             String loggedUserName = utilService.getAuthUserName();
             tickets = ticketRepo.findByOpenedBy(paging,loggedUserName);
-            Integer[] ticket_counts = setTicketCounts(tickets);
-            totalOpen = ticket_counts[0];
-            totalClosed = ticket_counts[1];
-            totalTickets = ticket_counts[2];
-
             if (ticketRefNo.isPresent()){
                 Optional<Ticket> t = ticketRepo.findByOpenedByAndTicketRefNo(loggedUserName,ticketRefNo.get());
                 tickets = addTicketToPage(t,tickets);
@@ -155,7 +138,7 @@ public class TicketService {
         }
 
         return mapObjectToPagination(mapTicketEntityToDto(tickets),tickets.getSize(),
-                tickets.getTotalPages(),totalOpen,totalClosed,totalTickets);
+                tickets.getTotalPages());
     }
 
     public Page<Ticket> addTicketToPage(Optional<Ticket> t, Page<Ticket> tickets){
@@ -170,14 +153,14 @@ public class TicketService {
         }
     }
 
-    public Integer[] setTicketCounts(Page<Ticket> tickets){
-        Integer[] ticket_counts = new Integer[3];
-        ticket_counts[0] = tickets.getContent().stream().filter(ticket ->
-                ticket.getStatus() == TicketStatus.OPEN ).collect(Collectors.toList()).size();
-        ticket_counts[1] = tickets.getContent().stream().filter(ticket ->
-                ticket.getStatus() == TicketStatus.CLOSED ).collect(Collectors.toList()).size();
-        ticket_counts[2] = tickets.getContent().size();
-        return ticket_counts;
+    public TicketMetricsDto setTicketCounts(List<Ticket> tickets){
+        TicketMetricsDto dto = new TicketMetricsDto();
+        dto.setOpen(tickets.stream().filter(ticket ->
+                ticket.getStatus() == TicketStatus.OPEN ).collect(Collectors.toList()).size());
+        dto.setClosed(tickets.stream().filter(ticket ->
+                ticket.getStatus() == TicketStatus.CLOSED ).collect(Collectors.toList()).size());
+        dto.setTotalTickets(tickets.size());
+        return dto;
     }
 
     public TicketStatus getTicketOrderStatusEnum(String status){
@@ -235,5 +218,18 @@ public class TicketService {
     public TicketDetailsDto getTicket(String ticketRefNo) {
         Ticket ticket = findByTicketRefNo(ticketRefNo);
         return modelMapper.map(ticket,TicketDetailsDto.class);
+    }
+
+    public Object getTicketMetrics(String user) {
+        List<Ticket> tickets = ticketRepo.findAll();
+        if(user.equals("admin")){
+            return setTicketCounts(tickets);
+        } else if (user.equals("client")) {
+            String loggedUserName = utilService.getAuthUserName();
+            List<Ticket> userTickets = tickets.stream().filter(ticket -> ticket.getOpenedBy().equals(loggedUserName)).collect(Collectors.toList());
+            return setTicketCounts(userTickets);
+        }else{
+            return null;
+        }
     }
 }

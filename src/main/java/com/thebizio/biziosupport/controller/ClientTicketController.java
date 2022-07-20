@@ -52,4 +52,9 @@ public class ClientTicketController {
     public ResponseEntity<RespMsgWithBodyDto> getTicket(@PathVariable(name = "ticketRefNo") String ticketRefNo ) {
         return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicket(ticketRefNo)));
     }
+
+    @GetMapping("/metrics")
+    public ResponseEntity<RespMsgWithBodyDto> getTicketMetrics() {
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicketMetrics("client")));
+    }
 }

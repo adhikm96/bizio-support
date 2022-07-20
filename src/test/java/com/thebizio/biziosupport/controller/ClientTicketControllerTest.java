@@ -314,4 +314,14 @@ public class ClientTicketControllerTest {
                 .andExpect(jsonPath("$.resObj.description", is(ticket1.getDescription())))
                 .andExpect(jsonPath("$.resObj.status", is(ticket1.getStatus().toString())));
     }
+
+    @Test
+    @DisplayName("test for /tickets/metrics")
+    public void get_ticket_metrics_test() throws Exception {
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/metrics"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)))
+                .andExpect(jsonPath("$.resObj.open", is(1)))
+                .andExpect(jsonPath("$.resObj.closed", is(0)))
+                .andExpect(jsonPath("$.resObj.totalTickets", is(1)));
+    }
 }
