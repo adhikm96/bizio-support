@@ -18,4 +18,5 @@ public class UtilService {
 	}
 
 	public String getAuthUserEmail() { return getKeycloakPrincipal().getEmail();}
+
 }

@@ -21,6 +21,7 @@ public class SpringSecurityAuditorAware implements AuditorAware<String> {
 			return null;
 		}
 
-		return Optional.of(utilService.getAuthUserEmail());
+//		return Optional.of(utilService.getAuthUserEmail());
+		return Optional.of(utilService.getAuthUserName());
 	}
 }

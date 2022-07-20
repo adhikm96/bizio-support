@@ -8,6 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenerationTime;
 import org.hibernate.annotations.GeneratorType;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.LastModifiedBy;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -36,6 +38,10 @@ public class TicketDetailsDto {
     private String applicationVersion;
     private String browserVersion;
     private Set<String> attachments = new HashSet<>();
+
     private LocalDateTime createdDate;
+    private LocalDateTime lastModifiedDate;
+    private String createdBy;
+    private String modifiedBy;
 
 }

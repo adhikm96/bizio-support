@@ -22,8 +22,10 @@ public class ClientTicketController {
     }
 
     @GetMapping
-    public ResponseEntity<TicketPaginationDto> getAllTicket(@RequestParam Optional<Integer> page, Optional<Integer> size) {
-        return ResponseEntity.ok(ticketService.getAllTicket(page, size));
+    public ResponseEntity<TicketPaginationDto> getAllTicket(@RequestParam Optional<Integer> page, Optional<Integer> size,
+                                                            Optional<String> ticketRefNo,Optional<String> status,Optional<String> username,
+                                                            Optional<String> assignedTo) {
+        return ResponseEntity.ok(ticketService.getAllTicket(page, size,"client",ticketRefNo,status,username,assignedTo));
     }
 
     @PostMapping("change-status")
@@ -49,5 +51,10 @@ public class ClientTicketController {
     @GetMapping("/{ticketRefNo}")
     public ResponseEntity<RespMsgWithBodyDto> getTicket(@PathVariable(name = "ticketRefNo") String ticketRefNo ) {
         return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicket(ticketRefNo)));
+    }
+
+    @GetMapping("/metrics")
+    public ResponseEntity<RespMsgWithBodyDto> getTicketMetrics() {
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicketMetrics("client")));
     }
 }

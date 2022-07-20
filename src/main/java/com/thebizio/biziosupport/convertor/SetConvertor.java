@@ -15,7 +15,7 @@ public class SetConvertor implements AttributeConverter<Set<String>, String> {
 
 	@Override
 	public Set<String> convertToEntityAttribute(String dbData) {
-		return dbData == null ? Collections.emptySet() : new HashSet<>(Arrays.asList(dbData.split(",")));
+		return dbData.equals("") ? Collections.emptySet() : new HashSet<>(Arrays.asList(dbData.split(",")));
 	}
 
 }
