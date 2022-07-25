@@ -4,6 +4,7 @@ import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.TicketStatus;
+import com.thebizio.biziosupport.exception.AlreadyExistsException;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import org.modelmapper.ModelMapper;
@@ -38,7 +39,7 @@ public class TicketService {
     }
 
     public Ticket findByTicketRefNo(String ticketRefNo){
-        return ticketRepo.findByTicketRefNo(ticketRefNo).orElseThrow(() -> new NotFoundException("ticket ref no found"));
+        return ticketRepo.findByTicketRefNo(ticketRefNo).orElseThrow(() -> new NotFoundException("ticket ref no. not found"));
     }
 
     public String createTicket(TicketCreateDto dto) {
@@ -230,6 +231,33 @@ public class TicketService {
             return setTicketCounts(userTickets);
         }else{
             return null;
+        }
+    }
+
+    public String updateTicket(String ticketRefNo,TicketUpdateDto dto) {
+        Ticket ticket = findByTicketRefNo(ticketRefNo);
+        if(ticket.getMessages().size() == 0) {
+            ticket.setTitle(dto.getTitle());
+            ticket.setDescription(dto.getDescription());
+            ticket.setTicketType(dto.getTicketType());
+            ticket.setAttachments(dto.getAttachments());
+            ticketRepo.save(ticket);
+            return "OK";
+        }else {
+            throw new AlreadyExistsException("ticket can not be updated");
+        }
+    }
+
+    public String updateTicketReply(TicketUpdateReplyDto dto) {
+        TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message number not found"));
+        TicketMessage latestTicketMessage = ticketMessageRepo.findFirst1ByOrderByCreatedDateDesc();
+        if(ticketMessage.getId() == latestTicketMessage.getId()) {
+            ticketMessage.setMessage(dto.getMessage());
+            ticketMessage.setAttachments(dto.getAttachments());
+            ticketMessageRepo.save(ticketMessage);
+            return "OK";
+        }else {
+            throw new AlreadyExistsException("reply can not be updated");
         }
     }
 }

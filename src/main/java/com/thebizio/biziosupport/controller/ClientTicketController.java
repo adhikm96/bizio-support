@@ -57,4 +57,15 @@ public class ClientTicketController {
     public ResponseEntity<RespMsgWithBodyDto> getTicketMetrics() {
         return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicketMetrics("client")));
     }
+
+    @PutMapping("/{ticketRefNo}")
+    public ResponseEntity<ResponseMessageDto> updateTicket(@PathVariable(name = "ticketRefNo") String ticketRefNo,
+                                                           @RequestBody @Valid TicketUpdateDto dto ) {
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.updateTicket(ticketRefNo,dto)));
+    }
+
+    @PutMapping("reply")
+    public ResponseEntity<ResponseMessageDto> updateTicketReply(@RequestBody @Valid TicketUpdateReplyDto dto) {
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.updateTicketReply(dto)));
+    }
 }
