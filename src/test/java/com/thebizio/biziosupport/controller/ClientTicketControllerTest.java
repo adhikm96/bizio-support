@@ -273,9 +273,6 @@ public class ClientTicketControllerTest {
                 .andExpect(jsonPath("$.resObj[0].message", is(tm1.getMessage())))
                 .andExpect(jsonPath("$.resObj[0].ticketId", is(ticket1.getId().toString())))
                 .andExpect(jsonPath("$.resObj[0].ticketRefNo", is(ticket1.getTicketRefNo())));
-
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/T123456789"))).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket ref no. not found")));
     }
 
     @Test
@@ -342,14 +339,20 @@ public class ClientTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/reply  update")
     public void ticket_update_reply_test() throws Exception {
+        Set<String> attachments = new HashSet<>();
+        attachments.add("D");
+        attachments.add("E");
+
         TicketUpdateReplyDto dto = new TicketUpdateReplyDto();
         dto.setTicketMessageId(tm1.getId());
         dto.setMessage("updated tm1 message");
+        dto.setAttachments(attachments);
 
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 
         assertEquals(ticketMessageRepo.findById(tm1.getId()).get().getMessage(),dto.getMessage());
+        assertEquals(ticketMessageRepo.findById(tm1.getId()).get().getAttachments().size(),5);
 
         TicketMessage tm2 = new TicketMessage();
         tm2.setMessage("tm2 message");

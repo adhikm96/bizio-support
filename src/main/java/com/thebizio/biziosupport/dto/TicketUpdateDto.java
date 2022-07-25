@@ -22,6 +22,12 @@ public class TicketUpdateDto {
     @NotNull(message = "must not be null or blank")
     @NotBlank(message = "must not be null or blank")
     private String description;
-
+    private DeviceType deviceType;
+    private OsEnum os;
+    private ApplicationEnum application;
+    private BrowserEnum browser;
     private Set<String> attachments = new HashSet<>();
+    private String osVersion;
+    private String applicationVersion;
+    private String browserVersion;
 }
