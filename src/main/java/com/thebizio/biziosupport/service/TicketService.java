@@ -263,17 +263,22 @@ public class TicketService {
     }
 
     public String updateTicketReply(TicketUpdateReplyDto dto) {
-        TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message number not found"));
+        TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message id not found"));
         TicketMessage latestTicketMessage = ticketMessageRepo.findFirst1ByOrderByCreatedDateDesc();
+
         if(ticketMessage.getId() == latestTicketMessage.getId()) {
             ticketMessage.setMessage(dto.getMessage());
 
             if (dto.getAttachments().size() > 0){
                 Set<String> attachments = ticketMessage.getAttachments();
-                for(String s : dto.getAttachments()){
-                    attachments.add(s);
+                if(attachments.isEmpty()){
+                    ticketMessage.setAttachments(dto.getAttachments());
+                }else {
+                    for(String s : dto.getAttachments()){
+                        attachments.add(s);
+                    }
+                    ticketMessage.setAttachments(attachments);
                 }
-                ticketMessage.setAttachments(attachments);
             }
             ticketMessageRepo.save(ticketMessage);
             return "OK";
