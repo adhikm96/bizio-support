@@ -4,6 +4,7 @@ import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.TicketStatus;
+import com.thebizio.biziosupport.exception.AlreadyExistsException;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import org.modelmapper.ModelMapper;
@@ -38,7 +39,7 @@ public class TicketService {
     }
 
     public Ticket findByTicketRefNo(String ticketRefNo){
-        return ticketRepo.findByTicketRefNo(ticketRefNo).orElseThrow(() -> new NotFoundException("ticket ref no found"));
+        return ticketRepo.findByTicketRefNo(ticketRefNo).orElseThrow(() -> new NotFoundException("ticket ref no. not found"));
     }
 
     public String createTicket(TicketCreateDto dto) {
@@ -86,7 +87,7 @@ public class TicketService {
 
     public TicketPaginationDto mapObjectToPagination(List<TicketDto> tickets, Integer pageSize, Integer totalPages){
         TicketPaginationDto dto = new TicketPaginationDto();
-        dto.setTickets(tickets);
+        dto.setTickets(tickets.stream().sorted(Comparator.comparing(TicketDto::getCreatedDate).reversed()).collect(Collectors.toList()));
         dto.setTotalPages(totalPages);
         dto.setPageSize(pageSize);
         return dto;
@@ -203,9 +204,9 @@ public class TicketService {
         return "OK";
     }
 
-    public Set<TicketMessage> getThreadTicket(String ticketRefNo) {
-        Set<TicketMessage> tms = findByTicketRefNo(ticketRefNo).getMessages();
-        return modelMapper.map(tms,new TypeToken<Set<TicketMessageDto>>(){}.getType());
+    public List<TicketMessageDto> getThreadTicket(String ticketRefNo) {
+        List<TicketMessage> tmList= ticketMessageRepo.findAllByTicketTicketRefNoOrderByCreatedDateDesc(ticketRefNo);
+        return modelMapper.map(tmList,new TypeToken<List<TicketMessageDto>>(){}.getType());
     }
 
     public String assignTicket(TicketAssignDto dto) {
@@ -230,6 +231,54 @@ public class TicketService {
             return setTicketCounts(userTickets);
         }else{
             return null;
+        }
+    }
+
+    public String updateTicket(String ticketRefNo,TicketUpdateDto dto) {
+        Ticket ticket = findByTicketRefNo(ticketRefNo);
+        if(ticket.getMessages().size() == 0) {
+            ticket.setTitle(dto.getTitle());
+            ticket.setDescription(dto.getDescription());
+            ticket.setTicketType(dto.getTicketType());
+            ticket.setDeviceType(dto.getDeviceType());
+            ticket.setOs(dto.getOs());
+            ticket.setApplication(dto.getApplication());
+            ticket.setBrowser(dto.getBrowser());
+            ticket.setOsVersion(dto.getOsVersion());
+            ticket.setApplicationVersion(dto.getApplicationVersion());
+            ticket.setBrowserVersion(dto.getBrowserVersion());
+
+            if (dto.getAttachments().size() > 0){
+                Set<String> attachments = ticket.getAttachments();
+                for(String s : dto.getAttachments()){
+                    attachments.add(s);
+                }
+                ticket.setAttachments(attachments);
+            }
+            ticketRepo.save(ticket);
+            return "OK";
+        }else {
+            throw new AlreadyExistsException("ticket can not be updated");
+        }
+    }
+
+    public String updateTicketReply(TicketUpdateReplyDto dto) {
+        TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message number not found"));
+        TicketMessage latestTicketMessage = ticketMessageRepo.findFirst1ByOrderByCreatedDateDesc();
+        if(ticketMessage.getId() == latestTicketMessage.getId()) {
+            ticketMessage.setMessage(dto.getMessage());
+
+            if (dto.getAttachments().size() > 0){
+                Set<String> attachments = ticketMessage.getAttachments();
+                for(String s : dto.getAttachments()){
+                    attachments.add(s);
+                }
+                ticketMessage.setAttachments(attachments);
+            }
+            ticketMessageRepo.save(ticketMessage);
+            return "OK";
+        }else {
+            throw new AlreadyExistsException("reply can not be updated");
         }
     }
 }

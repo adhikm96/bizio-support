@@ -1,9 +1,6 @@
 package com.thebizio.biziosupport.controller;
 
-import com.thebizio.biziosupport.dto.TicketAssignDto;
-import com.thebizio.biziosupport.dto.TicketCreateDto;
-import com.thebizio.biziosupport.dto.TicketReplyDto;
-import com.thebizio.biziosupport.dto.TicketStatusChangeDto;
+import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.*;
@@ -25,8 +22,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -49,7 +45,9 @@ class AdminTicketControllerTest {
     private TicketRepo ticketRepo;
 
     private Ticket ticket1;
+    private Ticket ticket2;
     private TicketMessage tm1;
+    private TicketMessage tm2;
 
     @Autowired
     private TicketMessageRepo ticketMessageRepo;
@@ -93,7 +91,7 @@ class AdminTicketControllerTest {
         ticket1.setOpenedBy("user1");
         ticketRepo.save(ticket1);
 
-        Ticket ticket2 = new Ticket();
+        ticket2 = new Ticket();
         ticket2.setTitle("Ticket2");
         ticket2.setDescription("Ticket2 description");
         ticket2.setStatus(TicketStatus.CLOSED);
@@ -109,6 +107,14 @@ class AdminTicketControllerTest {
         tm1.setMessage("tm1 message");
         tm1.setTicket(ticket1);
         ticketMessageRepo.save(tm1);
+
+        System.out.println("-----------------");
+        System.out.println("MESSAGE 2 CREATED");
+        tm2 = new TicketMessage();
+        tm2.setAttachments(attachments);
+        tm2.setMessage("tm2 message");
+        tm2.setTicket(ticket1);
+        ticketMessageRepo.save(tm2);
 
         when(utilService.getAuthUserEmail()).thenReturn("Testing@gmail.com");
         when(utilService.getAuthUserName()).thenReturn("TestingUser");
@@ -154,11 +160,11 @@ class AdminTicketControllerTest {
         //default page number 0 and page size 10
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(2)))
-                .andExpect(jsonPath("$.tickets[0].id", is(ticket1.getId().toString())))
-                .andExpect(jsonPath("$.tickets[0].title", is(ticket1.getTitle())))
-                .andExpect(jsonPath("$.tickets[0].attachments", is("3")))
-                .andExpect(jsonPath("$.tickets[0].conversation", is("1")))
-                .andExpect(jsonPath("$.tickets[0].status", is(TicketStatus.OPEN.toString())))
+                .andExpect(jsonPath("$.tickets[1].id", is(ticket1.getId().toString())))
+                .andExpect(jsonPath("$.tickets[1].title", is(ticket1.getTitle())))
+                .andExpect(jsonPath("$.tickets[1].attachments", is("3")))
+                .andExpect(jsonPath("$.tickets[1].conversation", is("2")))
+                .andExpect(jsonPath("$.tickets[1].status", is(TicketStatus.OPEN.toString())))
                 .andExpect(jsonPath("$.pageSize", is(10)));
 
         //pass page number 1 and page size 5
@@ -255,12 +261,12 @@ class AdminTicketControllerTest {
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isUnauthorized());
 
         //Two messages inside ticket
-        assertEquals(1,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
+        assertEquals(2,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         //Three messages inside ticket
-        assertEquals(2,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
+        assertEquals(3,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
 
         dto.setTicketRefNo("");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
@@ -275,18 +281,19 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/thread/{ticketRefNo}")
     public void get_thread_ticket_test() throws Exception {
+        List<TicketMessage> tmList= ticketMessageRepo.findAllByTicketTicketRefNoOrderByCreatedDateDesc(ticket1.getTicketRefNo());
+        System.out.println("----------------");
+        tmList.forEach(ticketMessage -> System.out.println(ticketMessage.getMessage()));
+
         mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/admin/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isUnauthorized());
 
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
-                .andExpect(jsonPath("$.resObj", hasSize(1)))
-                .andExpect(jsonPath("$.resObj[0].id", is(tm1.getId().toString())))
-                .andExpect(jsonPath("$.resObj[0].message", is(tm1.getMessage())))
-                .andExpect(jsonPath("$.resObj[0].ticketId", is(ticket1.getId().toString())))
-                .andExpect(jsonPath("$.resObj[0].ticketRefNo", is(ticket1.getTicketRefNo())));
-
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/T123456789"))).andExpect(status().isBadRequest())
-        .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket ref no found")));
+                .andExpect(jsonPath("$.resObj", hasSize(2)))
+                .andExpect(jsonPath("$.resObj[1].id", is(tm1.getId().toString())))
+                .andExpect(jsonPath("$.resObj[1].message", is(tm1.getMessage())))
+                .andExpect(jsonPath("$.resObj[1].ticketId", is(ticket1.getId().toString())))
+                .andExpect(jsonPath("$.resObj[1].ticketRefNo", is(ticket1.getTicketRefNo())));
     }
 
     @Test
@@ -332,6 +339,47 @@ class AdminTicketControllerTest {
                 .andExpect(jsonPath("$.resObj.closed", is(1)))
                 .andExpect(jsonPath("$.resObj.totalTickets", is(2)));
     }
+    @Test
+    @DisplayName("test for /tickets/{ticketRefNo}  update")
+    public void ticket_update_test() throws Exception {
+        TicketUpdateDto dto = new TicketUpdateDto();
+        dto.setTitle("Updated ticket title");
+        dto.setDescription("Updated description");
 
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
+
+        assertEquals(ticketRepo.findById(ticket2.getId()).get().getTitle(),dto.getTitle());
+
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket1.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
+    }
+
+    @Test
+    @DisplayName("test for /tickets/reply  update")
+    public void ticket_update_reply_test() throws Exception {
+        Set<String> attachments = new HashSet<>();
+        attachments.add("D");
+        attachments.add("E");
+
+        TicketUpdateReplyDto dto = new TicketUpdateReplyDto();
+        dto.setTicketMessageId(tm2.getId());
+        dto.setMessage("updated tm2 message");
+        dto.setAttachments(attachments);
+
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
+
+        assertEquals(ticketMessageRepo.findById(tm2.getId()).get().getMessage(),dto.getMessage());
+        assertEquals(ticketMessageRepo.findById(tm2.getId()).get().getAttachments().size(),5);
+
+        TicketMessage tm3 = new TicketMessage();
+        tm3.setMessage("tm3 message");
+        tm3.setTicket(ticket1);
+        ticketMessageRepo.save(tm3);
+
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("reply can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
+    }
 
 }
