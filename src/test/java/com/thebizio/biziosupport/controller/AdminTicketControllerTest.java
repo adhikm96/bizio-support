@@ -94,7 +94,7 @@ class AdminTicketControllerTest {
         ticket2 = new Ticket();
         ticket2.setTitle("Ticket2");
         ticket2.setDescription("Ticket2 description");
-        ticket2.setStatus(TicketStatus.CLOSED);
+        ticket2.setStatus(TicketStatus.OPEN);
         ticket2.setAttachments(attachments);
         ticket2.setOpenedBy("user2");
         ticket2.setAssignedTo("user3");
@@ -175,11 +175,11 @@ class AdminTicketControllerTest {
 
         //status open filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open"))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.tickets", hasSize(1)));
+                .andExpect(jsonPath("$.tickets", hasSize(2)));
 
         //status closed filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Closed"))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.tickets", hasSize(1)));
+                .andExpect(jsonPath("$.tickets", hasSize(0)));
 
         //ticketRefNo filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?ticketRefNo="+ticket1.getTicketRefNo()))).andExpect(status().isOk())
@@ -195,15 +195,15 @@ class AdminTicketControllerTest {
 
         //status open and UserName filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.tickets", hasSize(1)));
+                .andExpect(jsonPath("$.tickets", hasSize(2)));
 
         //status open and assignedTo filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&assignedTo=user3"))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.tickets", hasSize(1)));
+                .andExpect(jsonPath("$.tickets", hasSize(2)));
 
         //status open and assignedTo and UserName filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&assignedTo=user3&userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.tickets", hasSize(1)));
+                .andExpect(jsonPath("$.tickets", hasSize(2)));
     }
 
     @Test
@@ -335,8 +335,8 @@ class AdminTicketControllerTest {
     public void get_ticket_metrics_test() throws Exception {
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/metrics"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)))
-                .andExpect(jsonPath("$.resObj.open", is(1)))
-                .andExpect(jsonPath("$.resObj.closed", is(1)))
+                .andExpect(jsonPath("$.resObj.open", is(2)))
+                .andExpect(jsonPath("$.resObj.closed", is(0)))
                 .andExpect(jsonPath("$.resObj.totalTickets", is(2)));
     }
     @Test
