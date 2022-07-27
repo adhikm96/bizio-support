@@ -359,6 +359,12 @@ public class ClientTicketControllerTest {
         tm2.setTicket(ticket1);
         ticketMessageRepo.save(tm2);
 
+        TicketMessage tm3 = new TicketMessage();
+        tm3.setMessage("tm3 message");
+        tm3.setTicket(ticket2);
+        ticketMessageRepo.save(tm3);
+
+
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("reply can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
 
@@ -372,6 +378,5 @@ public class ClientTicketControllerTest {
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 
         assertEquals(ticketMessageRepo.findById(tm2.getId()).get().getMessage(),dto2.getMessage());
-
     }
 }

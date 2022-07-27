@@ -264,7 +264,12 @@ public class TicketService {
 
     public String updateTicketReply(TicketUpdateReplyDto dto) {
         TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message id not found"));
-        TicketMessage latestTicketMessage = ticketMessageRepo.findFirst1ByOrderByCreatedDateDesc();
+        TicketMessage latestTicketMessage = null;
+        if(dto.getTicketRefNo() == null || dto.getTicketRefNo().isEmpty()){
+            latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(ticketMessage.getTicket().getTicketRefNo());
+        }else {
+            latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(dto.getTicketRefNo());
+        }
 
         if(ticketMessage.getId() == latestTicketMessage.getId()) {
             ticketMessage.setMessage(dto.getMessage());
