@@ -176,16 +176,16 @@ public class TicketService {
 
     public String changeTicketStatus(TicketStatusChangeDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
-        String userEmail = utilService.getAuthUserEmail();
+        String userName = utilService.getAuthUserName();
 
         if (dto.getStatus().equals("Open")){
             ticket.setStatus(TicketStatus.OPEN);
-            ticket.setOpenedBy(userEmail);
+            ticket.setOpenedBy(userName);
             ticketRepo.save(ticket);
             return "OK";
         } else if (dto.getStatus().equals("Close")) {
             ticket.setStatus(TicketStatus.CLOSED);
-            ticket.setClosedBy(userEmail);
+            ticket.setClosedBy(userName);
             ticketRepo.save(ticket);
             return "OK";
         }else {
@@ -198,7 +198,7 @@ public class TicketService {
         TicketMessage tm = new TicketMessage();
         tm.setMessage(dto.getMessage());
         tm.setAttachments(dto.getAttachments());
-        tm.setOwner(utilService.getAuthUserEmail());
+        tm.setOwner(utilService.getAuthUserName());
         tm.setTicket(ticket);
         ticketMessageRepo.save(tm);
         return "OK";
@@ -236,59 +236,67 @@ public class TicketService {
 
     public String updateTicket(String ticketRefNo,TicketUpdateDto dto) {
         Ticket ticket = findByTicketRefNo(ticketRefNo);
-        if(ticket.getMessages().size() == 0) {
-            ticket.setTitle(dto.getTitle());
-            ticket.setDescription(dto.getDescription());
-            ticket.setTicketType(dto.getTicketType());
-            ticket.setDeviceType(dto.getDeviceType());
-            ticket.setOs(dto.getOs());
-            ticket.setApplication(dto.getApplication());
-            ticket.setBrowser(dto.getBrowser());
-            ticket.setOsVersion(dto.getOsVersion());
-            ticket.setApplicationVersion(dto.getApplicationVersion());
-            ticket.setBrowserVersion(dto.getBrowserVersion());
+        if (ticket.getStatus().equals(TicketStatus.OPEN)){
+            if(ticket.getMessages().size() == 0) {
+                ticket.setTitle(dto.getTitle());
+                ticket.setDescription(dto.getDescription());
+                ticket.setTicketType(dto.getTicketType());
+                ticket.setDeviceType(dto.getDeviceType());
+                ticket.setOs(dto.getOs());
+                ticket.setApplication(dto.getApplication());
+                ticket.setBrowser(dto.getBrowser());
+                ticket.setOsVersion(dto.getOsVersion());
+                ticket.setApplicationVersion(dto.getApplicationVersion());
+                ticket.setBrowserVersion(dto.getBrowserVersion());
 
-            if (dto.getAttachments().size() > 0){
-                Set<String> attachments = ticket.getAttachments();
-                for(String s : dto.getAttachments()){
-                    attachments.add(s);
+                if (dto.getAttachments().size() > 0){
+                    Set<String> attachments = ticket.getAttachments();
+                    for(String s : dto.getAttachments()){
+                        attachments.add(s);
+                    }
+                    ticket.setAttachments(attachments);
                 }
-                ticket.setAttachments(attachments);
+                ticketRepo.save(ticket);
+                return "OK";
+            }else {
+                throw new AlreadyExistsException("ticket can not be updated");
             }
-            ticketRepo.save(ticket);
-            return "OK";
         }else {
-            throw new AlreadyExistsException("ticket can not be updated");
+        throw new AlreadyExistsException("closed ticket can not be updated");
         }
     }
 
     public String updateTicketReply(TicketUpdateReplyDto dto) {
         TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message id not found"));
         TicketMessage latestTicketMessage = null;
-        if(dto.getTicketRefNo() == null || dto.getTicketRefNo().isEmpty()){
-            latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(ticketMessage.getTicket().getTicketRefNo());
-        }else {
-            latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(dto.getTicketRefNo());
-        }
-
-        if(ticketMessage.getId() == latestTicketMessage.getId()) {
-            ticketMessage.setMessage(dto.getMessage());
-
-            if (dto.getAttachments().size() > 0){
-                Set<String> attachments = ticketMessage.getAttachments();
-                if(attachments.isEmpty()){
-                    ticketMessage.setAttachments(dto.getAttachments());
-                }else {
-                    for(String s : dto.getAttachments()){
-                        attachments.add(s);
-                    }
-                    ticketMessage.setAttachments(attachments);
-                }
+        if (ticketMessage.getTicket().getStatus().equals(TicketStatus.OPEN)){
+            if(dto.getTicketRefNo() == null || dto.getTicketRefNo().isEmpty()){
+                latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(ticketMessage.getTicket().getTicketRefNo());
+            }else {
+                latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(dto.getTicketRefNo());
             }
-            ticketMessageRepo.save(ticketMessage);
-            return "OK";
-        }else {
-            throw new AlreadyExistsException("reply can not be updated");
+
+            if(ticketMessage.getId() == latestTicketMessage.getId()) {
+                ticketMessage.setMessage(dto.getMessage());
+
+                if (dto.getAttachments().size() > 0){
+                    Set<String> attachments = ticketMessage.getAttachments();
+                    if(attachments.isEmpty()){
+                        ticketMessage.setAttachments(dto.getAttachments());
+                    }else {
+                        for(String s : dto.getAttachments()){
+                            attachments.add(s);
+                        }
+                        ticketMessage.setAttachments(attachments);
+                    }
+                }
+                ticketMessageRepo.save(ticketMessage);
+                return "OK";
+            }else {
+                throw new AlreadyExistsException("reply can not be updated");
+            }
+        }else{
+                throw new AlreadyExistsException("reply can not be updated for closed ticket");
         }
     }
 }
