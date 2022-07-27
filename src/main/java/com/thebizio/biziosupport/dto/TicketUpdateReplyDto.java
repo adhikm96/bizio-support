@@ -16,6 +16,8 @@ public class TicketUpdateReplyDto {
     @NotNull(message = "must not be null")
     private UUID ticketMessageId;
 
+    private String ticketRefNo;
+
     @NotNull(message = "must not be null or blank")
     @NotBlank(message = "must not be null or blank")
     private String message;

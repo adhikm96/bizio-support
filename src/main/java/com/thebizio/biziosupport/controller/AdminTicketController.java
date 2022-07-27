@@ -29,22 +29,22 @@ public class AdminTicketController {
         return ResponseEntity.ok(ticketService.getAllTicket(page, size, "admin",ticketRefNo,status,userName,assignedTo));
     }
 
-    @PostMapping("change-status")
+    @PostMapping("/change-status")
     public ResponseEntity<ResponseMessageDto> changeTicketStatus(@RequestBody @Valid TicketStatusChangeDto dto) {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.changeTicketStatus(dto)));
     }
 
-    @PostMapping("reply")
+    @PostMapping("/reply")
     public ResponseEntity<ResponseMessageDto> replyTicket(@RequestBody @Valid TicketReplyDto dto) {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.replyTicket(dto)));
     }
 
-    @GetMapping("thread/{ticketRefNo}")
+    @GetMapping("/thread/{ticketRefNo}")
     public ResponseEntity<RespMsgWithBodyDto> getThreadTicket(@PathVariable(name = "ticketRefNo") String ticketRefNo ) {
         return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getThreadTicket(ticketRefNo)));
     }
 
-    @PostMapping("assign-ticket")
+    @PostMapping("/assign-ticket")
     public ResponseEntity<ResponseMessageDto> assignTicket(@RequestBody @Valid TicketAssignDto dto) {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.assignTicket(dto)));
     }
@@ -65,7 +65,7 @@ public class AdminTicketController {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.updateTicket(ticketRefNo,dto)));
     }
 
-    @PutMapping("reply")
+    @PutMapping("/reply")
     public ResponseEntity<ResponseMessageDto> updateTicketReply(@RequestBody @Valid TicketUpdateReplyDto dto) {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.updateTicketReply(dto)));
     }

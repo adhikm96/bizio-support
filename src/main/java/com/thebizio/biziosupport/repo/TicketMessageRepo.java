@@ -7,8 +7,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TicketMessageRepo extends JpaRepository<TicketMessage, UUID> {
-    
-    TicketMessage findFirst1ByOrderByCreatedDateDesc();
+    TicketMessage findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(String ticketRefNo);
 
     List<TicketMessage> findAllByTicketTicketRefNoOrderByCreatedDateDesc(String ticketRefNo);
 }
