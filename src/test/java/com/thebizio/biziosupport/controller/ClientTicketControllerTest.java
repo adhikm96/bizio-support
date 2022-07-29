@@ -276,29 +276,6 @@ public class ClientTicketControllerTest {
     }
 
     @Test
-    @DisplayName("test for /tickets/assign-ticket")
-    public void assign_ticket_test() throws Exception {
-        TicketAssignDto dto = new TicketAssignDto();
-        dto.setTicketRefNo(ticket1.getTicketRefNo());
-        dto.setAdminUserId(UUID.randomUUID().toString());
-
-
-        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isUnauthorized());
-
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-
-        dto.setTicketRefNo(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
-
-        dto.setTicketRefNo(ticket1.getTicketRefNo());
-        dto.setAdminUserId("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
-    }
-
-    @Test
     @DisplayName("test for /tickets/{ticketRefNo}")
     public void get_ticket_test() throws Exception {
         mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())

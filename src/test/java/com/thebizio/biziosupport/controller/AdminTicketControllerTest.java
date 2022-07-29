@@ -89,6 +89,7 @@ class AdminTicketControllerTest {
         ticket1.setStatus(TicketStatus.OPEN);
         ticket1.setAttachments(attachments);
         ticket1.setOpenedBy("user1");
+        ticket1.setAssignedTo("user3");
         ticketRepo.save(ticket1);
 
         ticket2 = new Ticket();
@@ -116,8 +117,7 @@ class AdminTicketControllerTest {
         tm2.setTicket(ticket1);
         ticketMessageRepo.save(tm2);
 
-        when(utilService.getAuthUserEmail()).thenReturn("Testing@gmail.com");
-        when(utilService.getAuthUserName()).thenReturn("TestingUser");
+        when(utilService.getAuthUserName()).thenReturn("user3");
     }
 
     @Test
@@ -191,7 +191,7 @@ class AdminTicketControllerTest {
 
         //assignedTo filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?assignedTo=user3"))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.tickets", hasSize(1)));
+                .andExpect(jsonPath("$.tickets", hasSize(2)));
 
         //status open and UserName filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
