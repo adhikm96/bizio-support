@@ -182,10 +182,10 @@ public class TicketService {
         }
     }
 
-    public String changeTicketStatus(TicketStatusChangeDto dto,boolean adminUser) {
+    public String changeTicketStatus(TicketStatusChangeDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userName = utilService.getAuthUserName();
-        if (adminUser || ticket.getOpenedBy().equals(userName)) {
+        if (ticket.getOpenedBy().equals(userName) || ticket.getAssignedTo().equals(userName)) {
             if (dto.getStatus().equals("Open")) {
                 ticket.setStatus(TicketStatus.OPEN);
                 ticket.setOpenedBy(userName);
@@ -204,7 +204,7 @@ public class TicketService {
         }
     }
 
-    public String replyTicket(TicketReplyDto dto,boolean adminUser) {
+    public String replyTicket(TicketReplyDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userName = utilService.getAuthUserName();
 
@@ -259,9 +259,13 @@ public class TicketService {
         }
     }
 
-    public String updateTicket(String ticketRefNo,TicketUpdateDto dto,boolean adminUser) {
+    public String updateTicket(String ticketRefNo,TicketUpdateDto dto) {
         Ticket ticket = findByTicketRefNo(ticketRefNo);
-        if (adminUser || ticket.getOpenedBy().equals(utilService.getAuthUserName())) {
+        String userName = utilService.getAuthUserName();
+        System.out.println(userName);
+        System.out.println(ticket.getCreatedBy());
+        System.out.println(ticket.getOpenedBy());
+        if (ticket.getCreatedBy().equals(userName) || ticket.getOpenedBy().equals(userName)) {
             if (ticket.getStatus().equals(TicketStatus.OPEN)) {
                 if (ticket.getMessages().size() == 0) {
                     ticket.setTitle(dto.getTitle());
@@ -295,9 +299,9 @@ public class TicketService {
         }
     }
 
-    public String updateTicketReply(TicketUpdateReplyDto dto,boolean adminUser) {
+    public String updateTicketReply(TicketUpdateReplyDto dto) {
         TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message id not found"));
-        if (adminUser || ticketMessage.getTicket().getOpenedBy().equals(utilService.getAuthUserName())) {
+        if (ticketMessage.getOwner().equals(utilService.getAuthUserName())) {
             TicketMessage latestTicketMessage = null;
             if (ticketMessage.getTicket().getStatus().equals(TicketStatus.OPEN)) {
                 if (dto.getTicketRefNo() == null || dto.getTicketRefNo().isEmpty()) {

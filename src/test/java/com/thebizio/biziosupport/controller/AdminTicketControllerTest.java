@@ -88,7 +88,8 @@ class AdminTicketControllerTest {
         ticket1.setDescription("Ticket1 description");
         ticket1.setStatus(TicketStatus.OPEN);
         ticket1.setAttachments(attachments);
-        ticket1.setOpenedBy("user1");
+        ticket1.setOpenedBy("user3");
+        ticket1.setCreatedBy("user1");
         ticket1.setAssignedTo("user3");
         ticketRepo.save(ticket1);
 
@@ -97,8 +98,9 @@ class AdminTicketControllerTest {
         ticket2.setDescription("Ticket2 description");
         ticket2.setStatus(TicketStatus.OPEN);
         ticket2.setAttachments(attachments);
+        ticket2.setCreatedBy("user3");
         ticket2.setOpenedBy("user2");
-        ticket2.setAssignedTo("user3");
+        ticket2.setAssignedTo("user5");
         ticketRepo.save(ticket2);
 
         System.out.println("-----------------");
@@ -114,6 +116,7 @@ class AdminTicketControllerTest {
         tm2 = new TicketMessage();
         tm2.setAttachments(attachments);
         tm2.setMessage("tm2 message");
+        tm2.setOwner("user3");
         tm2.setTicket(ticket1);
         ticketMessageRepo.save(tm2);
 
@@ -139,6 +142,16 @@ class AdminTicketControllerTest {
         dto.setAttachments(attachments);
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets"),dto)).andExpect(status().isUnauthorized());
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("openedBy must not be null")));
+
+        dto.setOpenedBy("");
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("openedBy must not be blank")));
+
+        dto.setOpenedBy("user3");
 
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
@@ -276,6 +289,13 @@ class AdminTicketControllerTest {
         dto.setMessage("");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("must not be null or blank")));
+
+        TicketReplyDto dto2 = new TicketReplyDto();
+        dto2.setTicketRefNo(ticket2.getTicketRefNo());
+        dto2.setMessage("This is coming from reply to ticket api");
+        dto2.setAttachments(attachments);
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto2)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("user can not reply to this ticket")));
     }
 
     @Test
