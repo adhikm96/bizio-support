@@ -18,7 +18,7 @@ public class ClientTicketController {
 
     @PostMapping
     public ResponseEntity<ResponseMessageDto> createTicket(@RequestBody @Valid TicketCreateDto dto) {
-        return ResponseEntity.ok(new ResponseMessageDto(ticketService.createTicket(dto)));
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.createTicket(dto,false)));
     }
 
     @GetMapping
