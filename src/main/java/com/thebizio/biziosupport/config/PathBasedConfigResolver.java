@@ -44,15 +44,21 @@ public class PathBasedConfigResolver implements KeycloakConfigResolver {
     public KeycloakDeployment resolve(OIDCHttpFacade.Request request) {
 
         String path = request.getURI();
+        KeycloakDeployment kcDeployment;
+        kcDeployment = cache.get("client");
+
         int multitenantIndex = path.indexOf("v1/");
         if (multitenantIndex == -1) {
-            AdapterConfig ac = new AdapterConfig();
-            ac.setRealm(clientKeycloakRealm);
-            ac.setAuthServerUrl(clientKeycloakAuthUrl);
-            ac.setResource(clientKeycloakResource);
-            ac.setBearerOnly(clientBearerOnly);
-            cache.put("client", KeycloakDeploymentBuilder.build(ac));
-            return cache.get("client");
+            if (kcDeployment == null){
+                AdapterConfig ac = new AdapterConfig();
+                ac.setRealm(clientKeycloakRealm);
+                ac.setAuthServerUrl(clientKeycloakAuthUrl);
+                ac.setResource(clientKeycloakResource);
+                ac.setBearerOnly(clientBearerOnly);
+                cache.put("client", KeycloakDeploymentBuilder.build(ac));
+                kcDeployment = cache.get("client");
+            }
+            return kcDeployment;
         }
 
         String realm = path.substring(path.indexOf("v1/")).split("/")[1];
@@ -60,7 +66,9 @@ public class PathBasedConfigResolver implements KeycloakConfigResolver {
             realm = realm.split("\\?")[0];
         }
 
-        if (!cache.containsKey(realm)) {
+        kcDeployment = cache.get(realm);
+
+        if (kcDeployment == null) {
             if(realm.equals("admin")){
                 AdapterConfig ac = new AdapterConfig();
                 ac.setRealm(adminKeycloakRealm);
@@ -75,12 +83,14 @@ public class PathBasedConfigResolver implements KeycloakConfigResolver {
                 ac.setResource(clientKeycloakResource);
                 ac.setBearerOnly(clientBearerOnly);
                 cache.put(realm, KeycloakDeploymentBuilder.build(ac));
-
             }else {
                 throw new NotFoundException("realm not found");
             }
+
+            kcDeployment = cache.get(realm);
         }
-        return cache.get(realm);
+
+        return kcDeployment;
     }
 
     static void setAdapterConfig(AdapterConfig adapterConfig) {
