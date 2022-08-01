@@ -19,14 +19,14 @@ public class AdminTicketController {
 
     @PostMapping
     public ResponseEntity<ResponseMessageDto> createTicket(@RequestBody @Valid TicketCreateDto dto) {
-        return ResponseEntity.ok(new ResponseMessageDto(ticketService.createTicket(dto)));
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.createTicket(dto,true)));
     }
 
     @GetMapping
     public ResponseEntity<TicketPaginationDto> getAllTicket(@RequestParam Optional<Integer> page, Optional<Integer> size,
                                                             Optional<String> ticketRefNo,Optional<String> status,Optional<String> userName,
                                                             Optional<String> assignedTo) {
-        return ResponseEntity.ok(ticketService.getAllTicket(page, size, "admin",ticketRefNo,status,userName,assignedTo));
+        return ResponseEntity.ok(ticketService.getAllTicket(page, size, true,ticketRefNo,status,userName,assignedTo));
     }
 
     @PostMapping("/change-status")
@@ -41,7 +41,7 @@ public class AdminTicketController {
 
     @GetMapping("/thread/{ticketRefNo}")
     public ResponseEntity<RespMsgWithBodyDto> getThreadTicket(@PathVariable(name = "ticketRefNo") String ticketRefNo ) {
-        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getThreadTicket(ticketRefNo)));
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getThreadTicket(ticketRefNo,true)));
     }
 
     @PostMapping("/assign-ticket")
@@ -51,12 +51,12 @@ public class AdminTicketController {
 
     @GetMapping("/{ticketRefNo}")
     public ResponseEntity<RespMsgWithBodyDto> getTicket(@PathVariable(name = "ticketRefNo") String ticketRefNo ) {
-        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicket(ticketRefNo)));
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicket(ticketRefNo,true)));
     }
 
     @GetMapping("/metrics")
     public ResponseEntity<RespMsgWithBodyDto> getTicketMetrics() {
-        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicketMetrics("admin")));
+        return ResponseEntity.ok(new RespMsgWithBodyDto("OK", ticketService.getTicketMetrics(true)));
     }
 
     @PutMapping("/{ticketRefNo}")

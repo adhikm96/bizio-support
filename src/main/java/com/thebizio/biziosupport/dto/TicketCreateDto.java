@@ -31,4 +31,5 @@ public class TicketCreateDto {
     private String osVersion;
     private String applicationVersion;
     private String browserVersion;
+    private String openedBy;
 }

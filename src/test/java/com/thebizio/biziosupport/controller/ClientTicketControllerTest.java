@@ -89,6 +89,7 @@ public class ClientTicketControllerTest {
         ticket1.setStatus(TicketStatus.OPEN);
         ticket1.setAttachments(attachments);
         ticket1.setOpenedBy("TestingUser");
+        ticket1.setCreatedBy("TestingUser");
         ticket1.setAssignedTo("TestingUser4");
         ticketRepo.save(ticket1);
 
@@ -98,6 +99,7 @@ public class ClientTicketControllerTest {
         ticket2.setStatus(TicketStatus.OPEN);
         ticket2.setAttachments(attachments);
         ticket2.setOpenedBy("TestingUser2");
+        ticket2.setCreatedBy("TestingUser");
         ticket2.setAssignedTo("TestingUser3");
         ticketRepo.save(ticket2);
 
@@ -107,6 +109,7 @@ public class ClientTicketControllerTest {
         tm1.setAttachments(attachments);
         tm1.setMessage("tm1 message");
         tm1.setTicket(ticket1);
+        tm1.setOwner("TestingUser");
         ticketMessageRepo.save(tm1);
 
         when(utilService.getAuthUserEmail()).thenReturn("Testing@gmail.com");
@@ -228,6 +231,14 @@ public class ClientTicketControllerTest {
         dto.setStatus("");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
+
+
+        TicketStatusChangeDto dto2 = new TicketStatusChangeDto();
+        dto2.setTicketRefNo(ticket2.getTicketRefNo());
+        dto2.setStatus("Close");
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto2)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("user can not change the ticket status")));
     }
 
     @Test
@@ -276,29 +287,6 @@ public class ClientTicketControllerTest {
     }
 
     @Test
-    @DisplayName("test for /tickets/assign-ticket")
-    public void assign_ticket_test() throws Exception {
-        TicketAssignDto dto = new TicketAssignDto();
-        dto.setTicketRefNo(ticket1.getTicketRefNo());
-        dto.setAdminUserId(UUID.randomUUID().toString());
-
-
-        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isUnauthorized());
-
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isOk())
-                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-
-        dto.setTicketRefNo(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
-
-        dto.setTicketRefNo(ticket1.getTicketRefNo());
-        dto.setAdminUserId("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
-    }
-
-    @Test
     @DisplayName("test for /tickets/{ticketRefNo}")
     public void get_ticket_test() throws Exception {
         mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())
@@ -327,7 +315,7 @@ public class ClientTicketControllerTest {
         dto.setTitle("Updated ticket title");
         dto.setDescription("Updated description");
 
-        System.out.println(ticket2.getStatus());
+        System.out.println(ticket2.getCreatedBy());
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 
@@ -369,11 +357,13 @@ public class ClientTicketControllerTest {
         TicketMessage tm2 = new TicketMessage();
         tm2.setMessage("tm2 message");
         tm2.setTicket(ticket1);
+        tm2.setOwner("TestingUser");
         ticketMessageRepo.save(tm2);
 
         TicketMessage tm3 = new TicketMessage();
         tm3.setMessage("tm3 message");
         tm3.setTicket(ticket2);
+        tm3.setOwner("TestingUser");
         ticketMessageRepo.save(tm3);
 
         ticket1.setStatus(TicketStatus.OPEN);
