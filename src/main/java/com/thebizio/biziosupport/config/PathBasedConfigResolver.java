@@ -49,7 +49,7 @@ public class PathBasedConfigResolver implements KeycloakConfigResolver {
 
         int multitenantIndex = path.indexOf("v1/");
         if (multitenantIndex == -1) {
-            if (kcDeployment != null){
+            if (kcDeployment == null){
                 AdapterConfig ac = new AdapterConfig();
                 ac.setRealm(clientKeycloakRealm);
                 ac.setAuthServerUrl(clientKeycloakAuthUrl);
