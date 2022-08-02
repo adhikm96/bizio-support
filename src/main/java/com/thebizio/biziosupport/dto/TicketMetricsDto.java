@@ -2,11 +2,18 @@ package com.thebizio.biziosupport.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 
 @Data
-@NoArgsConstructor
 public class TicketMetricsDto {
-    private Integer open;
-    private Integer closed;
-    private Integer totalTickets;
+
+    private Long open;
+    private Long closed;
+    private Long totalTickets;
+
+    public TicketMetricsDto(){
+        this.open = Long.valueOf(0);
+        this.closed = Long.valueOf(0);
+        this.totalTickets = Long.valueOf(0);
+    }
 }
