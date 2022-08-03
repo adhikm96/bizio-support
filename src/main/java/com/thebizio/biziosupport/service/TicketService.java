@@ -162,13 +162,16 @@ public class TicketService {
         }
     }
 
-    public TicketMetricsDto setTicketCounts(List<Ticket> tickets){
+    public TicketMetricsDto setTicketCounts(Long ticketsCount, List<TicketStatusMetricsDto> ticketsStatusCount){
         TicketMetricsDto dto = new TicketMetricsDto();
-        dto.setOpen(tickets.stream().filter(ticket ->
-                ticket.getStatus() == TicketStatus.OPEN ).collect(Collectors.toList()).size());
-        dto.setClosed(tickets.stream().filter(ticket ->
-                ticket.getStatus() == TicketStatus.CLOSED ).collect(Collectors.toList()).size());
-        dto.setTotalTickets(tickets.size());
+        for (TicketStatusMetricsDto tsm:ticketsStatusCount){
+            if (tsm.getStatus().equals(TicketStatus.OPEN)){
+                dto.setOpen(tsm.getCount());
+            } else if (tsm.getStatus().equals(TicketStatus.CLOSED)) {
+                dto.setClosed(tsm.getCount());
+            }
+        }
+        dto.setTotalTickets(ticketsCount);
         return dto;
     }
 
@@ -249,13 +252,16 @@ public class TicketService {
     }
 
     public Object getTicketMetrics(boolean adminUser) {
-        List<Ticket> tickets = ticketRepo.findAll();
+
         if(adminUser){
-            return setTicketCounts(tickets);
+            Long ticketsCount = ticketRepo.countTickets();
+            List<TicketStatusMetricsDto>  ticketsStatusCount = ticketRepo.countTicketByStatus();
+            return setTicketCounts(ticketsCount,ticketsStatusCount);
         } else{
             String loggedUserName = utilService.getAuthUserName();
-            List<Ticket> userTickets = tickets.stream().filter(ticket -> ticket.getOpenedBy().equals(loggedUserName)).collect(Collectors.toList());
-            return setTicketCounts(userTickets);
+            Long ticketsCount = ticketRepo.countTicketsByOpenedBy(loggedUserName);
+            List<TicketStatusMetricsDto>  ticketsStatusCount = ticketRepo.countTicketByStatusAndOpenedBy(loggedUserName);
+            return setTicketCounts(ticketsCount,ticketsStatusCount);
         }
     }
 

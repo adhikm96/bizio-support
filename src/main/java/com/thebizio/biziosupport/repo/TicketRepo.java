@@ -1,10 +1,12 @@
 package com.thebizio.biziosupport.repo;
 
+import com.thebizio.biziosupport.dto.TicketStatusMetricsDto;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.enums.TicketStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
 import java.util.Optional;
@@ -28,4 +30,17 @@ public interface TicketRepo extends JpaRepository<Ticket, UUID> {
     Page<Ticket> findByOpenedByAndStatus(Pageable pageable,String openedBy, TicketStatus status);
 
     Page<Ticket> findByOpenedByAndAssignedTo(Pageable pageable,String openedBy,String assignedTo);
+
+
+    @Query("SELECT new com.thebizio.biziosupport.dto.TicketStatusMetricsDto(t.status,COUNT(t.status)) FROM Ticket t WHERE t.openedBy = :openedBy GROUP BY t.status")
+    List<TicketStatusMetricsDto> countTicketByStatusAndOpenedBy(String openedBy);
+
+    @Query("SELECT new com.thebizio.biziosupport.dto.TicketStatusMetricsDto(t.status,COUNT(t.status)) FROM Ticket t GROUP BY t.status")
+    List<TicketStatusMetricsDto> countTicketByStatus();
+
+    @Query("SELECT COUNT(*) FROM Ticket t WHERE t.openedBy = :openedBy")
+    long countTicketsByOpenedBy(String openedBy);
+
+    @Query("SELECT COUNT(*) FROM Ticket t")
+    long countTickets();
 }
