@@ -15,21 +15,23 @@ import java.util.UUID;
 public interface TicketRepo extends JpaRepository<Ticket, UUID> {
 
     Optional<Ticket> findByTicketRefNo(String ticketRefNo);
-    Page<Ticket> findByOpenedBy(Pageable pageable,String openedBy);
 
-    Page<Ticket> findByAssignedTo(Pageable pageable,String assignedTo);
+    Page<Ticket> findAllByOrderByCreatedDateDesc(Pageable pageable);
+    Page<Ticket> findByOpenedByOrderByCreatedDateDesc(Pageable pageable,String openedBy);
 
-    Page<Ticket> findByAssignedToAndStatus(Pageable pageable,String assignedTo,TicketStatus status);
+    Page<Ticket> findByAssignedToOrderByCreatedDateDesc(Pageable pageable,String assignedTo);
 
-    Page<Ticket> findByOpenedByAndAssignedToAndStatus(Pageable pageable,String openedBy,String assignedTo,TicketStatus status);
+    Page<Ticket> findByAssignedToAndStatusOrderByCreatedDateDesc(Pageable pageable,String assignedTo,TicketStatus status);
 
-    Page<Ticket> findByStatus(Pageable pageable, TicketStatus status);
+    Page<Ticket> findByOpenedByAndAssignedToAndStatusOrderByCreatedDateDesc(Pageable pageable,String openedBy,String assignedTo,TicketStatus status);
+
+    Page<Ticket> findByStatusOrderByCreatedDateDesc(Pageable pageable, TicketStatus status);
 
     Optional<Ticket> findByOpenedByAndTicketRefNo(String openedBy,String ticketRefNo);
 
-    Page<Ticket> findByOpenedByAndStatus(Pageable pageable,String openedBy, TicketStatus status);
+    Page<Ticket> findByOpenedByAndStatusOrderByCreatedDateDesc(Pageable pageable,String openedBy, TicketStatus status);
 
-    Page<Ticket> findByOpenedByAndAssignedTo(Pageable pageable,String openedBy,String assignedTo);
+    Page<Ticket> findByOpenedByAndAssignedToOrderByCreatedDateDesc(Pageable pageable,String openedBy,String assignedTo);
 
 
     @Query("SELECT new com.thebizio.biziosupport.dto.TicketStatusMetricsDto(t.status,COUNT(t.status)) FROM Ticket t WHERE t.openedBy = :openedBy GROUP BY t.status")
