@@ -83,6 +83,8 @@ class AdminTicketControllerTest {
         attachments.add("B");
         attachments.add("C");
 
+        System.out.println("-----------------");
+        System.out.println("TICKET 1 CREATED");
         ticket1 = new Ticket();
         ticket1.setTitle("Ticket1");
         ticket1.setDescription("Ticket1 description");
@@ -93,6 +95,8 @@ class AdminTicketControllerTest {
         ticket1.setAssignedTo("user3");
         ticketRepo.save(ticket1);
 
+        System.out.println("-----------------");
+        System.out.println("TICKET 2 CREATED");
         ticket2 = new Ticket();
         ticket2.setTitle("Ticket2");
         ticket2.setDescription("Ticket2 description");
@@ -204,7 +208,7 @@ class AdminTicketControllerTest {
 
         //assignedTo filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?assignedTo=user3"))).andExpect(status().isOk())
-                .andExpect(jsonPath("$.tickets", hasSize(2)));
+                .andExpect(jsonPath("$.tickets", hasSize(1)));
 
         //status open and UserName filter
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())

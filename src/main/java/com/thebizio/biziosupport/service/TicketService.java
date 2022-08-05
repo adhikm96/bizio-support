@@ -10,10 +10,7 @@ import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import com.thebizio.biziosupport.repo.TicketRepo;
 
@@ -99,7 +96,7 @@ public class TicketService {
 
     public TicketPaginationDto mapObjectToPagination(List<TicketDto> tickets, Integer pageSize, Integer totalPages){
         TicketPaginationDto dto = new TicketPaginationDto();
-        dto.setTickets(tickets.stream().sorted(Comparator.comparing(TicketDto::getCreatedDate).reversed()).collect(Collectors.toList()));
+        dto.setTickets(tickets);
         dto.setTotalPages(totalPages);
         dto.setPageSize(pageSize);
         return dto;
@@ -113,37 +110,37 @@ public class TicketService {
         Page<Ticket> tickets = null;
 
         if(adminUser){
-            tickets = ticketRepo.findAll(paging);
+            tickets = ticketRepo.findAllByOrderByCreatedDateDesc(paging);
 
             if (ticketRefNo.isPresent()){
                 Optional<Ticket> t = ticketRepo.findByTicketRefNo(ticketRefNo.get());
                 tickets = addTicketToPage(t,tickets);
             } else if (status.isPresent()) {
-                tickets = ticketRepo.findByStatus(paging,getTicketOrderStatusEnum(status.get()));
+                tickets = ticketRepo.findByStatusOrderByCreatedDateDesc(paging,getTicketOrderStatusEnum(status.get()));
             } else if (userName.isPresent()) {
-                tickets = ticketRepo.findByOpenedBy(paging,userName.get());
+                tickets = ticketRepo.findByOpenedByOrderByCreatedDateDesc(paging,userName.get());
             } else if (assignedTo.isPresent()) {
-                tickets = ticketRepo.findByAssignedTo(paging,assignedTo.get());
+                tickets = ticketRepo.findByAssignedToOrderByCreatedDateDesc(paging,assignedTo.get());
             }else if (userName.isPresent() && status.isPresent()) {
-                tickets = ticketRepo.findByOpenedByAndStatus(paging,userName.get(),getTicketOrderStatusEnum(status.get()));
+                tickets = ticketRepo.findByOpenedByAndStatusOrderByCreatedDateDesc(paging,userName.get(),getTicketOrderStatusEnum(status.get()));
             }else if (assignedTo.isPresent() && status.isPresent()) {
-                tickets = ticketRepo.findByAssignedToAndStatus(paging,assignedTo.get(),getTicketOrderStatusEnum(status.get()));
+                tickets = ticketRepo.findByAssignedToAndStatusOrderByCreatedDateDesc(paging,assignedTo.get(),getTicketOrderStatusEnum(status.get()));
             }else if (userName.isPresent() && assignedTo.isPresent() && status.isPresent()) {
-                tickets = ticketRepo.findByOpenedByAndAssignedToAndStatus(paging,userName.get(),assignedTo.get(),getTicketOrderStatusEnum(status.get()));
+                tickets = ticketRepo.findByOpenedByAndAssignedToAndStatusOrderByCreatedDateDesc(paging,userName.get(),assignedTo.get(),getTicketOrderStatusEnum(status.get()));
             }
 
         } else{
             String loggedUserName = utilService.getAuthUserName();
-            tickets = ticketRepo.findByOpenedBy(paging,loggedUserName);
+            tickets = ticketRepo.findByOpenedByOrderByCreatedDateDesc(paging,loggedUserName);
             if (ticketRefNo.isPresent()){
                 Optional<Ticket> t = ticketRepo.findByOpenedByAndTicketRefNo(loggedUserName,ticketRefNo.get());
                 tickets = addTicketToPage(t,tickets);
             } else if (status.isPresent()) {
-                tickets = ticketRepo.findByOpenedByAndStatus(paging,loggedUserName,getTicketOrderStatusEnum(status.get()));
+                tickets = ticketRepo.findByOpenedByAndStatusOrderByCreatedDateDesc(paging,loggedUserName,getTicketOrderStatusEnum(status.get()));
             } else if (assignedTo.isPresent()) {
-                tickets = ticketRepo.findByOpenedByAndAssignedTo(paging,loggedUserName,assignedTo.get());
+                tickets = ticketRepo.findByOpenedByAndAssignedToOrderByCreatedDateDesc(paging,loggedUserName,assignedTo.get());
             }else if (assignedTo.isPresent() && status.isPresent()) {
-                tickets = ticketRepo.findByOpenedByAndAssignedToAndStatus(paging,loggedUserName,assignedTo.get(),getTicketOrderStatusEnum(status.get()));
+                tickets = ticketRepo.findByOpenedByAndAssignedToAndStatusOrderByCreatedDateDesc(paging,loggedUserName,assignedTo.get(),getTicketOrderStatusEnum(status.get()));
             }
         }
         return mapObjectToPagination(mapTicketEntityToDto(tickets),tickets.getSize(),
