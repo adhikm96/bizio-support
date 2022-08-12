@@ -270,6 +270,12 @@ public class ClientTicketControllerTest {
         dto.setMessage("");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("must not be null or blank")));
+
+        ticket1.setAssignedTo(null);
+        ticketRepo.save(ticket1);
+        dto.setMessage("This is coming from reply to ticket api");
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("ticket is not assigned to the customer service yet, you can still edit the ticket")));
     }
 
     @Test
@@ -315,7 +321,11 @@ public class ClientTicketControllerTest {
         dto.setTitle("Updated ticket title");
         dto.setDescription("Updated description");
 
-        System.out.println(ticket2.getCreatedBy());
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
+
+        ticket2.setAssignedTo(null);
+        ticketRepo.save(ticket2);
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 

@@ -370,6 +370,11 @@ class AdminTicketControllerTest {
         dto.setTitle("Updated ticket title");
         dto.setDescription("Updated description");
 
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
+
+        ticket2.setAssignedTo(null);
+        ticketRepo.save(ticket2);
         mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 

@@ -30,7 +30,7 @@ public class ClientTicketController {
 
     @PostMapping("/change-status")
     public ResponseEntity<ResponseMessageDto> changeTicketStatus(@RequestBody @Valid TicketStatusChangeDto dto) {
-        return ResponseEntity.ok(new ResponseMessageDto(ticketService.changeTicketStatus(dto)));
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.changeTicketStatus(dto,false)));
     }
 
     @PostMapping("/reply")
