@@ -207,17 +207,20 @@ public class TicketService {
     public String replyTicket(TicketReplyDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userName = utilService.getAuthUserName();
-
-        if (ticket.getAssignedTo().equals(userName) || ticket.getOpenedBy().equals(userName)) {
-            TicketMessage tm = new TicketMessage();
-            tm.setMessage(dto.getMessage());
-            tm.setAttachments(dto.getAttachments());
-            tm.setOwner(userName);
-            tm.setTicket(ticket);
-            ticketMessageRepo.save(tm);
-            return "OK";
+        if(ticket.getAssignedTo() == null){
+            throw new NotFoundException("ticket is not assigned to the customer service yet, you can still edit the ticket");
         }else {
-            throw new NotFoundException("user can not reply to this ticket");
+            if (ticket.getAssignedTo().equals(userName) || ticket.getOpenedBy().equals(userName)) {
+                TicketMessage tm = new TicketMessage();
+                tm.setMessage(dto.getMessage());
+                tm.setAttachments(dto.getAttachments());
+                tm.setOwner(userName);
+                tm.setTicket(ticket);
+                ticketMessageRepo.save(tm);
+                return "OK";
+            } else {
+                throw new NotFoundException("user can not reply to this ticket");
+            }
         }
     }
 
@@ -265,9 +268,6 @@ public class TicketService {
     public String updateTicket(String ticketRefNo,TicketUpdateDto dto) {
         Ticket ticket = findByTicketRefNo(ticketRefNo);
         String userName = utilService.getAuthUserName();
-        System.out.println(userName);
-        System.out.println(ticket.getCreatedBy());
-        System.out.println(ticket.getOpenedBy());
         if (ticket.getCreatedBy().equals(userName) || ticket.getOpenedBy().equals(userName)) {
             if (ticket.getStatus().equals(TicketStatus.OPEN)) {
                 if (ticket.getMessages().size() == 0) {
