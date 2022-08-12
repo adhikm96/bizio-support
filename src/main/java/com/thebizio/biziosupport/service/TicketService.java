@@ -182,27 +182,41 @@ public class TicketService {
         }
     }
 
-    public String changeTicketStatus(TicketStatusChangeDto dto) {
+    public String changeTicketStatus(TicketStatusChangeDto dto,boolean adminUser) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userName = utilService.getAuthUserName();
-        if (ticket.getOpenedBy().equals(userName) || ticket.getAssignedTo().equals(userName)) {
-            if (dto.getStatus().equals("Open")) {
-                ticket.setStatus(TicketStatus.OPEN);
-                ticket.setOpenedBy(userName);
-                ticketRepo.save(ticket);
-                return "OK";
-            } else if (dto.getStatus().equals("Close")) {
-                ticket.setStatus(TicketStatus.CLOSED);
-                ticket.setClosedBy(userName);
-                ticketRepo.save(ticket);
+
+        if(adminUser) {
+            if (ticket.getAssignedTo() != null && ticket.getAssignedTo().equals(userName)) {
+                changeStatus(dto, ticket, userName);
                 return "OK";
             } else {
-                throw new NotFoundException("status should be Open or Close");
+                throw new NotFoundException("user can not change the ticket status");
             }
         }else {
-            throw new NotFoundException("user can not change the ticket status");
+            if (ticket.getOpenedBy().equals(userName)){
+                changeStatus(dto,ticket,userName);
+                return "OK";
+            }else {
+                throw new NotFoundException("user can not change the ticket status");
+            }
         }
     }
+
+    public void changeStatus(TicketStatusChangeDto dto,Ticket ticket,String userName) {
+        if (dto.getStatus().equals("Open")) {
+            ticket.setStatus(TicketStatus.OPEN);
+            ticket.setOpenedBy(userName);
+            ticketRepo.save(ticket);
+        } else if (dto.getStatus().equals("Close")) {
+            ticket.setStatus(TicketStatus.CLOSED);
+            ticket.setClosedBy(userName);
+            ticketRepo.save(ticket);
+        } else {
+            throw new NotFoundException("status should be Open or Close");
+        }
+    }
+
 
     public String replyTicket(TicketReplyDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
