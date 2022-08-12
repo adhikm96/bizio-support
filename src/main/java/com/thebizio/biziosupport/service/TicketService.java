@@ -187,11 +187,20 @@ public class TicketService {
         String userName = utilService.getAuthUserName();
 
         if(adminUser) {
-            if (ticket.getAssignedTo() != null && ticket.getAssignedTo().equals(userName)) {
-                changeStatus(dto, ticket, userName);
-                return "OK";
+            if (ticket.getAssignedTo() == null || ticket.getAssignedTo().isEmpty()) {
+                if(ticket.getCreatedBy().equals(userName)){
+                    changeStatus(dto, ticket, userName);
+                    return "OK";
+                }else {
+                    throw new NotFoundException("user can not change the ticket status");
+                }
             } else {
-                throw new NotFoundException("user can not change the ticket status");
+                if(ticket.getAssignedTo().equals(userName)){
+                    changeStatus(dto, ticket, userName);
+                    return "OK";
+                }else {
+                    throw new NotFoundException("user can not change the ticket status");
+                }
             }
         }else {
             if (ticket.getOpenedBy().equals(userName)){
@@ -284,28 +293,32 @@ public class TicketService {
         String userName = utilService.getAuthUserName();
         if (ticket.getCreatedBy().equals(userName) || ticket.getOpenedBy().equals(userName)) {
             if (ticket.getStatus().equals(TicketStatus.OPEN)) {
-                if (ticket.getMessages().size() == 0) {
-                    ticket.setTitle(dto.getTitle());
-                    ticket.setDescription(dto.getDescription());
-                    ticket.setTicketType(dto.getTicketType());
-                    ticket.setDeviceType(dto.getDeviceType());
-                    ticket.setOs(dto.getOs());
-                    ticket.setApplication(dto.getApplication());
-                    ticket.setBrowser(dto.getBrowser());
-                    ticket.setOsVersion(dto.getOsVersion());
-                    ticket.setApplicationVersion(dto.getApplicationVersion());
-                    ticket.setBrowserVersion(dto.getBrowserVersion());
+                if(ticket.getAssignedTo() == null || ticket.getAssignedTo().isEmpty()){
+                    if (ticket.getMessages().size() == 0) {
+                        ticket.setTitle(dto.getTitle());
+                        ticket.setDescription(dto.getDescription());
+                        ticket.setTicketType(dto.getTicketType());
+                        ticket.setDeviceType(dto.getDeviceType());
+                        ticket.setOs(dto.getOs());
+                        ticket.setApplication(dto.getApplication());
+                        ticket.setBrowser(dto.getBrowser());
+                        ticket.setOsVersion(dto.getOsVersion());
+                        ticket.setApplicationVersion(dto.getApplicationVersion());
+                        ticket.setBrowserVersion(dto.getBrowserVersion());
 
-                    if (dto.getAttachments().size() > 0) {
-                        Set<String> attachments = ticket.getAttachments();
-                        for (String s : dto.getAttachments()) {
-                            attachments.add(s);
+                        if (dto.getAttachments().size() > 0) {
+                            Set<String> attachments = ticket.getAttachments();
+                            for (String s : dto.getAttachments()) {
+                                attachments.add(s);
+                            }
+                            ticket.setAttachments(attachments);
                         }
-                        ticket.setAttachments(attachments);
+                        ticketRepo.save(ticket);
+                        return "OK";
+                    }else {
+                        throw new AlreadyExistsException("ticket can not be updated");
                     }
-                    ticketRepo.save(ticket);
-                    return "OK";
-                } else {
+                }else {
                     throw new AlreadyExistsException("ticket can not be updated");
                 }
             } else {
