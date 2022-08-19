@@ -1,5 +1,7 @@
 package com.thebizio.biziosupport.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
@@ -7,15 +9,21 @@ import com.thebizio.biziosupport.enums.TicketStatus;
 import com.thebizio.biziosupport.exception.AlreadyExistsException;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
+import com.thebizio.biziosupport.repo.TicketRepo;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import com.thebizio.biziosupport.repo.TicketRepo;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class TicketService {
@@ -28,6 +36,9 @@ public class TicketService {
 
     @Autowired
     private ModelMapper modelMapper;
+
+    @Autowired
+    private ExternalApiService externalApiService;
 
     @Autowired
     private TicketMessageRepo ticketMessageRepo;
@@ -260,7 +271,7 @@ public class TicketService {
 
     public String assignTicket(TicketAssignDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
-        ticket.setAssignedTo(dto.getAdminUserId());
+        ticket.setAssignedTo(externalApiService.getAdminUser(dto.getAdminUserId()));
         ticketRepo.save(ticket);
         return "OK";
     }

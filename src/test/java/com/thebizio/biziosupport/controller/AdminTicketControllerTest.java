@@ -6,6 +6,7 @@ import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.*;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import com.thebizio.biziosupport.repo.TicketRepo;
+import com.thebizio.biziosupport.service.ExternalApiService;
 import com.thebizio.biziosupport.service.UtilService;
 import com.thebizio.biziosupport.util.AdminKeycloakMockService;
 import com.thebizio.biziosupport.util.AdminUtilTestService;
@@ -21,6 +22,7 @@ import java.util.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -43,6 +45,9 @@ class AdminTicketControllerTest {
 
     @Autowired
     private TicketRepo ticketRepo;
+
+    @MockBean
+    private ExternalApiService externalApiService;
 
     private Ticket ticket1;
     private Ticket ticket2;
@@ -323,9 +328,10 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/assign-ticket")
     public void assign_ticket_test() throws Exception {
+        when(externalApiService.getAdminUser(any(String.class))).thenReturn("adminUser");
         TicketAssignDto dto = new TicketAssignDto();
         dto.setTicketRefNo(ticket1.getTicketRefNo());
-        dto.setAdminUserId(UUID.randomUUID().toString());
+        dto.setAdminUserId("adminUser");
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isUnauthorized());
 
