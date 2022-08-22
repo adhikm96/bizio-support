@@ -45,4 +45,6 @@ public interface TicketRepo extends JpaRepository<Ticket, UUID> {
 
     @Query("SELECT COUNT(*) FROM Ticket t")
     long countTickets();
+
+    Optional<Ticket> findByTitle(String title);
 }

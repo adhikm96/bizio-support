@@ -62,5 +62,4 @@ public class Ticket extends BaseEntity{
 
     @OneToMany(mappedBy = "ticket", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private Set<TicketMessage> messages = new HashSet<>();
-
 }

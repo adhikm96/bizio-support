@@ -1,15 +1,17 @@
 package com.thebizio.biziosupport.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.thebizio.biziosupport.convertor.SetConvertor;
+import com.thebizio.biziosupport.enums.MessageType;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
 import javax.persistence.*;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 @Entity
 @Table(name = "ticket_messages")
@@ -27,6 +29,8 @@ public class TicketMessage extends BaseEntity{
 
     private String message;
     private String owner;
+
+    private MessageType messageType;
 
     @Convert(converter = SetConvertor.class)
     private Set<String> attachments = new HashSet<>();
