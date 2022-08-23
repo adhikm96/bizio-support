@@ -1,10 +1,9 @@
 package com.thebizio.biziosupport.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
+import com.thebizio.biziosupport.enums.MessageType;
 import com.thebizio.biziosupport.enums.TicketStatus;
 import com.thebizio.biziosupport.exception.AlreadyExistsException;
 import com.thebizio.biziosupport.exception.NotFoundException;
@@ -13,15 +12,12 @@ import com.thebizio.biziosupport.repo.TicketRepo;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -77,7 +73,16 @@ public class TicketService {
         }else {
             ticket.setOpenedBy(utilService.getAuthUserName());
         }
-        ticketRepo.save(ticket);
+
+        Ticket t = ticketRepo.save(ticket);
+
+        System.out.println("--------------");
+        System.out.println(t.getTicketRefNo());
+        TicketMessage ticketMessage = new TicketMessage();
+        ticketMessage.setMessage(t.getOpenedBy()+" opened ticket "+t.getTicketRefNo());
+        ticketMessage.setMessageType(MessageType.EVENT);
+        ticketMessage.setTicket(t);
+        ticketMessageRepo.save(ticketMessage);
 
         return "OK";
     }
@@ -193,10 +198,11 @@ public class TicketService {
         }
     }
 
+
+    @Transactional
     public String changeTicketStatus(TicketStatusChangeDto dto,boolean adminUser) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userName = utilService.getAuthUserName();
-
         if(adminUser) {
             if (ticket.getAssignedTo() == null || ticket.getAssignedTo().isEmpty()) {
                 if(ticket.getCreatedBy().equals(userName)){
@@ -223,15 +229,46 @@ public class TicketService {
         }
     }
 
+    public void createTicketMessage(Ticket ticket,TicketStatus status){
+        if (status.equals(TicketStatus.OPEN)) {
+            List<TicketMessage> ticketMessageFound = ticketMessageRepo.findAllByTicketAndMessageTypeAndMessageLike(ticket,MessageType.EVENT,"%opened ticket%");
+            TicketMessage ticketMessage = new TicketMessage();
+            if (ticketMessageFound.size() > 0){
+                ticketMessage.setMessage(utilService.getAuthUserName()+" reopened ticket "+ticket.getTicketRefNo());
+            }else {
+                ticketMessage.setMessage(utilService.getAuthUserName()+" opened ticket "+ticket.getTicketRefNo());
+            }
+            ticketMessage.setTicket(ticket);
+            ticketMessage.setMessageType(MessageType.EVENT);
+            ticketMessageRepo.save(ticketMessage);
+        } else if (status.equals(TicketStatus.CLOSED)){
+            TicketMessage ticketMessage = new TicketMessage();
+            ticketMessage.setMessage(utilService.getAuthUserName()+" closed ticket "+ticket.getTicketRefNo());
+            ticketMessage.setMessageType(MessageType.EVENT);
+            ticketMessage.setTicket(ticket);
+            ticketMessageRepo.save(ticketMessage);
+        }
+    }
+
     public void changeStatus(TicketStatusChangeDto dto,Ticket ticket,String userName) {
         if (dto.getStatus().equals("Open")) {
-            ticket.setStatus(TicketStatus.OPEN);
-            ticket.setOpenedBy(userName);
-            ticketRepo.save(ticket);
+            if (ticket.getStatus().equals(TicketStatus.OPEN)){
+                throw new AlreadyExistsException("ticket is already open");
+            }else {
+                ticket.setStatus(TicketStatus.OPEN);
+                ticket.setOpenedBy(userName);
+                ticketRepo.save(ticket);
+                createTicketMessage(ticket, TicketStatus.OPEN);
+            }
         } else if (dto.getStatus().equals("Close")) {
-            ticket.setStatus(TicketStatus.CLOSED);
-            ticket.setClosedBy(userName);
-            ticketRepo.save(ticket);
+            if (ticket.getStatus().equals(TicketStatus.CLOSED)){
+                throw new AlreadyExistsException("ticket is already closed");
+            }else {
+                ticket.setStatus(TicketStatus.CLOSED);
+                ticket.setClosedBy(userName);
+                ticketRepo.save(ticket);
+                createTicketMessage(ticket, TicketStatus.CLOSED);
+            }
         } else {
             throw new NotFoundException("status should be Open or Close");
         }
@@ -250,6 +287,7 @@ public class TicketService {
                 tm.setAttachments(dto.getAttachments());
                 tm.setOwner(userName);
                 tm.setTicket(ticket);
+                tm.setMessageType(MessageType.REPLY);
                 ticketMessageRepo.save(tm);
                 return "OK";
             } else {
@@ -262,17 +300,29 @@ public class TicketService {
         Ticket ticket = findByTicketRefNo(ticketRefNo);
         if (adminUser || ticket.getOpenedBy().equals(utilService.getAuthUserName())) {
             List<TicketMessage> tmList = ticketMessageRepo.findAllByTicketTicketRefNoOrderByCreatedDateDesc(ticketRefNo);
-            return modelMapper.map(tmList, new TypeToken<List<TicketMessageDto>>() {
-            }.getType());
+            return modelMapper.map(tmList, new TypeToken<List<TicketMessageDto>>() {}.getType());
         }else {
             throw new NotFoundException("user can not read the messages");
         }
     }
 
+    @Transactional
     public String assignTicket(TicketAssignDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         ticket.setAssignedTo(externalApiService.getAdminUser(dto.getAdminUserId()));
         ticketRepo.save(ticket);
+
+        List<TicketMessage> ticketMessageFound = ticketMessageRepo.findAllByTicketAndMessageTypeAndMessageLike(ticket,MessageType.EVENT,"%is assigned to%");
+        TicketMessage ticketMessage = new TicketMessage();
+        if (ticketMessageFound.size() > 0){
+            ticketMessage.setMessage(ticket.getTicketRefNo()+" is reassigned to "+ticket.getAssignedTo());
+        }else {
+            ticketMessage.setMessage(ticket.getTicketRefNo()+" is assigned to "+ticket.getAssignedTo());
+        }
+        ticketMessage.setTicket(ticket);
+        ticketMessage.setMessageType(MessageType.EVENT);
+        ticketMessageRepo.save(ticketMessage);
+
         return "OK";
     }
 
@@ -305,7 +355,7 @@ public class TicketService {
         if (ticket.getCreatedBy().equals(userName) || ticket.getOpenedBy().equals(userName)) {
             if (ticket.getStatus().equals(TicketStatus.OPEN)) {
                 if(ticket.getAssignedTo() == null || ticket.getAssignedTo().isEmpty()){
-                    if (ticket.getMessages().size() == 0) {
+                    if (ticketMessageRepo.findAllByTicketAndMessageType(ticket,MessageType.REPLY).size() == 0) {
                         ticket.setTitle(dto.getTitle());
                         ticket.setDescription(dto.getDescription());
                         ticket.setTicketType(dto.getTicketType());

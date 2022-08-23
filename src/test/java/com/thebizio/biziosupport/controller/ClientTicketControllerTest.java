@@ -4,6 +4,7 @@ import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.*;
+import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import com.thebizio.biziosupport.repo.TicketRepo;
 import com.thebizio.biziosupport.service.UtilService;
@@ -16,14 +17,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -331,6 +334,15 @@ public class ClientTicketControllerTest {
 
         assertEquals(ticketRepo.findById(ticket2.getId()).get().getTitle(),dto.getTitle());
 
+        TicketMessage tm3 = new TicketMessage();
+        tm3.setMessage("tm3 message");
+        tm3.setTicket(ticket2);
+        tm3.setMessageType(MessageType.REPLY);
+        ticketMessageRepo.save(tm3);
+
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
+
         ticket2.setStatus(TicketStatus.CLOSED);
         ticketRepo.save(ticket2);
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
@@ -391,4 +403,68 @@ public class ClientTicketControllerTest {
 
         assertEquals(ticketMessageRepo.findById(tm2.getId()).get().getMessage(),dto2.getMessage());
     }
+
+    @Test
+    @DisplayName("test for ticket events")
+    public void ticket_events_test() throws Exception {
+        TicketCreateDto ticketCreateDto = new TicketCreateDto();
+        Set<String> attachments = new HashSet<>();
+        attachments.add("A");
+
+        ticketCreateDto.setApplication(ApplicationEnum.BIZIO_MEET);
+        ticketCreateDto.setBrowser(BrowserEnum.GOOGLE_CHROME);
+        ticketCreateDto.setTicketType(TicketType.BILLING);
+        ticketCreateDto.setOs(OsEnum.PC);
+        ticketCreateDto.setTitle("Ticket Event");
+        ticketCreateDto.setDescription("This is ticket description for ticket event");
+        ticketCreateDto.setDeviceType(DeviceType.MOBILE);
+        ticketCreateDto.setAttachments(attachments);
+        ticketCreateDto.setOpenedBy("TestingUser");
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),ticketCreateDto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        Ticket ticket = ticketRepo.findByTitle("Ticket Event").orElseThrow(() -> new NotFoundException("ticket not found"));
+
+        TicketStatusChangeDto ticketStatusChangeDto = new TicketStatusChangeDto();
+        ticketStatusChangeDto.setTicketRefNo(ticket.getTicketRefNo());
+        ticketStatusChangeDto.setStatus("Close");
+
+        //close ticket
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        //try to close ticket again
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket is already closed")));
+
+        //reopened ticket
+        ticketStatusChangeDto.setStatus("Open");
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        //try to open ticket again
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket is already open")));
+
+        //close ticket
+        ticketStatusChangeDto.setStatus("Close");
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        //reopened ticket
+        ticketStatusChangeDto.setStatus("Open");
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/"+ticket.getTicketRefNo()))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
+                .andExpect(jsonPath("$.resObj", hasSize(5)))
+                .andExpect(jsonPath("$.resObj[0].message", is("TestingUser reopened ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[1].message", is("TestingUser closed ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[2].message", is("TestingUser reopened ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[3].message", is("TestingUser closed ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[4].message", is("TestingUser opened ticket "+ticket.getTicketRefNo())));
+    }
+
 }
