@@ -123,6 +123,7 @@ class AdminTicketControllerTest {
         tm1.setAttachments(attachments);
         tm1.setMessage("tm1 message");
         tm1.setTicket(ticket1);
+        tm1.setMessageType(MessageType.REPLY);
         ticketMessageRepo.save(tm1);
 
         System.out.println("-----------------");
@@ -132,6 +133,7 @@ class AdminTicketControllerTest {
         tm2.setMessage("tm2 message");
         tm2.setOwner("user3");
         tm2.setTicket(ticket1);
+        tm2.setMessageType(MessageType.REPLY);
         ticketMessageRepo.save(tm2);
 
         when(utilService.getAuthUserName()).thenReturn("user3");
@@ -322,7 +324,8 @@ class AdminTicketControllerTest {
                 .andExpect(jsonPath("$.resObj[1].id", is(tm1.getId().toString())))
                 .andExpect(jsonPath("$.resObj[1].message", is(tm1.getMessage())))
                 .andExpect(jsonPath("$.resObj[1].ticketId", is(ticket1.getId().toString())))
-                .andExpect(jsonPath("$.resObj[1].ticketRefNo", is(ticket1.getTicketRefNo())));
+                .andExpect(jsonPath("$.resObj[1].ticketRefNo", is(ticket1.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[1].messageType", is(tm1.getMessageType().toString())));
     }
 
     @Test
@@ -346,6 +349,24 @@ class AdminTicketControllerTest {
         dto.setAdminUserId("");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
+    }
+
+
+    @Test
+    @DisplayName("test for /tickets/claim")
+    public void claim_ticket_test() throws Exception {
+        when(externalApiService.getAdminUser(any(String.class))).thenReturn("user3");
+        TicketClaimDto dto = new TicketClaimDto();
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
+
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isUnauthorized());
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        dto.setTicketRefNo(null);
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
     }
 
     @Test

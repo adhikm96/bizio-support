@@ -37,6 +37,9 @@ public class TicketService {
     private ExternalApiService externalApiService;
 
     @Autowired
+    private TicketMessageService ticketMessageService;
+
+    @Autowired
     private TicketMessageRepo ticketMessageRepo;
     public Ticket findById(UUID id){
         return ticketRepo.findById(id).orElseThrow(() -> new NotFoundException("ticket not found"));
@@ -311,18 +314,7 @@ public class TicketService {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         ticket.setAssignedTo(externalApiService.getAdminUser(dto.getAdminUserId()));
         ticketRepo.save(ticket);
-
-        List<TicketMessage> ticketMessageFound = ticketMessageRepo.findAllByTicketAndMessageTypeAndMessageLike(ticket,MessageType.EVENT,"%is assigned to%");
-        TicketMessage ticketMessage = new TicketMessage();
-        if (ticketMessageFound.size() > 0){
-            ticketMessage.setMessage(ticket.getTicketRefNo()+" is reassigned to "+ticket.getAssignedTo());
-        }else {
-            ticketMessage.setMessage(ticket.getTicketRefNo()+" is assigned to "+ticket.getAssignedTo());
-        }
-        ticketMessage.setTicket(ticket);
-        ticketMessage.setMessageType(MessageType.EVENT);
-        ticketMessageRepo.save(ticketMessage);
-
+        ticketMessageService.createAssignedToTicketMessageEvent(ticket);
         return "OK";
     }
 
@@ -426,5 +418,14 @@ public class TicketService {
         }else {
             throw new NotFoundException("user can not update ticket message");
         }
+    }
+
+    public String claimTicket(TicketClaimDto dto) {
+        Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
+        String userName = utilService.getAuthUserName();
+        ticket.setAssignedTo(externalApiService.getAdminUser(userName));
+        ticketRepo.save(ticket);
+        ticketMessageService.createAssignedToTicketMessageEvent(ticket);
+        return "OK";
     }
 }

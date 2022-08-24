@@ -1,5 +1,6 @@
 package com.thebizio.biziosupport.dto;
 
+import com.thebizio.biziosupport.enums.MessageType;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -19,5 +20,6 @@ public class TicketMessageDto {
     private UUID ticketId;
     private String TicketRefNo;
     private LocalDateTime createdDate;
+    private MessageType messageType;
 
 }
