@@ -6,10 +6,11 @@ import com.thebizio.biziosupport.enums.MessageType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface TicketMessageRepo extends JpaRepository<TicketMessage, UUID> {
-    TicketMessage findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(String ticketRefNo);
+    Optional<TicketMessage> findFirst1ByTicketTicketRefNoAndMessageTypeOrderByCreatedDateDesc(String ticketRefNo, MessageType messageType);
 
     List<TicketMessage> findAllByTicketTicketRefNoOrderByCreatedDateDesc(String ticketRefNo);
 

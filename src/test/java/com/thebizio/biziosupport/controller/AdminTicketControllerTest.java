@@ -18,10 +18,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.hasSize;
@@ -441,6 +438,7 @@ class AdminTicketControllerTest {
         TicketMessage tm3 = new TicketMessage();
         tm3.setMessage("tm3 message");
         tm3.setTicket(ticket1);
+        tm3.setMessageType(MessageType.REPLY);
         ticketMessageRepo.save(tm3);
 
         mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
@@ -532,6 +530,7 @@ class AdminTicketControllerTest {
                 .andExpect(jsonPath("$.resObj[5].message", is(ticket.getTicketRefNo()+" is reassigned to adminUser2")))
                 .andExpect(jsonPath("$.resObj[6].message", is(ticket.getTicketRefNo()+" is assigned to adminUser")))
                 .andExpect(jsonPath("$.resObj[7].message", is("user3 opened ticket "+ticket.getTicketRefNo())));
+
     }
 
 }

@@ -113,6 +113,7 @@ public class ClientTicketControllerTest {
         tm1.setMessage("tm1 message");
         tm1.setTicket(ticket1);
         tm1.setOwner("TestingUser");
+        tm1.setMessageType(MessageType.REPLY);
         ticketMessageRepo.save(tm1);
 
         when(utilService.getAuthUserEmail()).thenReturn("Testing@gmail.com");
@@ -380,13 +381,8 @@ public class ClientTicketControllerTest {
         tm2.setMessage("tm2 message");
         tm2.setTicket(ticket1);
         tm2.setOwner("TestingUser");
+        tm2.setMessageType(MessageType.REPLY);
         ticketMessageRepo.save(tm2);
-
-        TicketMessage tm3 = new TicketMessage();
-        tm3.setMessage("tm3 message");
-        tm3.setTicket(ticket2);
-        tm3.setOwner("TestingUser");
-        ticketMessageRepo.save(tm3);
 
         ticket1.setStatus(TicketStatus.OPEN);
         ticketRepo.save(ticket1);
