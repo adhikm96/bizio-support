@@ -385,15 +385,19 @@ public class TicketService {
     public String updateTicketReply(TicketUpdateReplyDto dto) {
         TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message id not found"));
         if (ticketMessage.getOwner().equals(utilService.getAuthUserName())) {
-            TicketMessage latestTicketMessage = null;
+            Optional<TicketMessage> latestTicketMessage = null;
             if (ticketMessage.getTicket().getStatus().equals(TicketStatus.OPEN)) {
                 if (dto.getTicketRefNo() == null || dto.getTicketRefNo().isEmpty()) {
-                    latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(ticketMessage.getTicket().getTicketRefNo());
+                    latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoAndMessageTypeOrderByCreatedDateDesc(ticketMessage.getTicket().getTicketRefNo(),MessageType.REPLY);
                 } else {
-                    latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoOrderByCreatedDateDesc(dto.getTicketRefNo());
+                    latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoAndMessageTypeOrderByCreatedDateDesc(dto.getTicketRefNo(),MessageType.REPLY);
                 }
 
-                if (ticketMessage.getId() == latestTicketMessage.getId()) {
+                if (!latestTicketMessage.isPresent()){
+                    throw new NotFoundException("last ticket message not found");
+                }
+
+                if (ticketMessage.getId() == latestTicketMessage.get().getId()) {
                     ticketMessage.setMessage(dto.getMessage());
 
                     if (dto.getAttachments().size() > 0) {
