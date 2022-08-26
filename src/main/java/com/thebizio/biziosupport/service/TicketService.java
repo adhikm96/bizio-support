@@ -96,10 +96,10 @@ public class TicketService {
         for (Ticket ticket : tickets.getContent()) {
             TicketDto dto = new TicketDto();
             dto.setId(ticket.getId());
-            dto.setAttachments(String.valueOf(ticket.getAttachments().size()));
+            dto.setAttachments(ticket.getAttachments().size());
             dto.setTitle(ticket.getTitle());
             dto.setStatus(ticket.getStatus());
-            dto.setConversation(String.valueOf(ticket.getMessages().size()));
+            dto.setConversation(ticketMessageRepo.countTicketMessageByTicketAndMessageType(ticket,MessageType.REPLY));
             dto.setType(ticket.getTicketType());
             dto.setTicketRefNo(ticket.getTicketRefNo());
             dto.setCreatedBy(ticket.getCreatedBy());

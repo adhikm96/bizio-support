@@ -15,8 +15,8 @@ public class TicketDto {
 
     private UUID id;
     private String title;
-    private String attachments;
-    private String conversation;
+    private Integer attachments;
+    private Integer conversation;
     private TicketStatus status;
     private TicketType type;
     private String ticketRefNo;

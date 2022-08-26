@@ -188,8 +188,8 @@ class AdminTicketControllerTest {
                 .andExpect(jsonPath("$.tickets", hasSize(2)))
                 .andExpect(jsonPath("$.tickets[1].id", is(ticket1.getId().toString())))
                 .andExpect(jsonPath("$.tickets[1].title", is(ticket1.getTitle())))
-                .andExpect(jsonPath("$.tickets[1].attachments", is("3")))
-                .andExpect(jsonPath("$.tickets[1].conversation", is("2")))
+                .andExpect(jsonPath("$.tickets[1].attachments", is(3)))
+                .andExpect(jsonPath("$.tickets[1].conversation", is(2)))
                 .andExpect(jsonPath("$.tickets[1].status", is(TicketStatus.OPEN.toString())))
                 .andExpect(jsonPath("$.pageSize", is(10)));
 
