@@ -278,8 +278,8 @@ public class ClientTicketControllerTest {
         ticket1.setAssignedTo(null);
         ticketRepo.save(ticket1);
         dto.setMessage("This is coming from reply to ticket api");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("ticket is not assigned to the customer service yet, you can still edit the ticket")));
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
     }
 
     @Test
@@ -325,11 +325,6 @@ public class ClientTicketControllerTest {
         dto.setTitle("Updated ticket title");
         dto.setDescription("Updated description");
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
-
-        ticket2.setAssignedTo(null);
-        ticketRepo.save(ticket2);
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 
@@ -339,6 +334,7 @@ public class ClientTicketControllerTest {
         tm3.setMessage("tm3 message");
         tm3.setTicket(ticket2);
         tm3.setMessageType(MessageType.REPLY);
+        tm3.setOwner(ticket2.getAssignedTo());
         ticketMessageRepo.save(tm3);
 
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
@@ -349,8 +345,6 @@ public class ClientTicketControllerTest {
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("closed ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket1.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.message", is("ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
     }
 
     @Test
