@@ -17,7 +17,7 @@ public interface TicketMessageRepo extends JpaRepository<TicketMessage, UUID> {
 
     List<TicketMessage> findAllByTicketAndMessageTypeAndMessageLike(Ticket ticket, MessageType messageType,String message);
 
-    List<TicketMessage> findAllByTicketAndMessageType(Ticket ticket,MessageType messageType);
+    List<TicketMessage> findAllByTicketAndMessageTypeAndOwner(Ticket ticket,MessageType messageType,String owner);
 
     @Query("SELECT COUNT(*) FROM TicketMessage tm WHERE tm.ticket = :ticket AND tm.messageType = :messageType")
     Integer countTicketMessageByTicketAndMessageType(Ticket ticket,MessageType messageType);

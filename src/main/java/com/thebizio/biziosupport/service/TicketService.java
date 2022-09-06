@@ -281,21 +281,24 @@ public class TicketService {
     public String replyTicket(TicketReplyDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userName = utilService.getAuthUserName();
+        String ticketAssignedTo;
         if(ticket.getAssignedTo() == null){
-            throw new NotFoundException("ticket is not assigned to the customer service yet, you can still edit the ticket");
+            ticketAssignedTo = "";
         }else {
-            if (ticket.getAssignedTo().equals(userName) || ticket.getOpenedBy().equals(userName)) {
-                TicketMessage tm = new TicketMessage();
-                tm.setMessage(dto.getMessage());
-                tm.setAttachments(dto.getAttachments());
-                tm.setOwner(userName);
-                tm.setTicket(ticket);
-                tm.setMessageType(MessageType.REPLY);
-                ticketMessageRepo.save(tm);
-                return "OK";
-            } else {
-                throw new NotFoundException("user can not reply to this ticket");
-            }
+            ticketAssignedTo = ticket.getAssignedTo();
+        }
+
+        if (ticketAssignedTo.equals(userName) || ticket.getOpenedBy().equals(userName)) {
+            TicketMessage tm = new TicketMessage();
+            tm.setMessage(dto.getMessage());
+            tm.setAttachments(dto.getAttachments());
+            tm.setOwner(userName);
+            tm.setTicket(ticket);
+            tm.setMessageType(MessageType.REPLY);
+            ticketMessageRepo.save(tm);
+            return "OK";
+        } else {
+            throw new NotFoundException("user can not reply to this ticket");
         }
     }
 
@@ -346,31 +349,27 @@ public class TicketService {
         String userName = utilService.getAuthUserName();
         if (ticket.getCreatedBy().equals(userName) || ticket.getOpenedBy().equals(userName)) {
             if (ticket.getStatus().equals(TicketStatus.OPEN)) {
-                if(ticket.getAssignedTo() == null || ticket.getAssignedTo().isEmpty()){
-                    if (ticketMessageRepo.findAllByTicketAndMessageType(ticket,MessageType.REPLY).size() == 0) {
-                        ticket.setTitle(dto.getTitle());
-                        ticket.setDescription(dto.getDescription());
-                        ticket.setTicketType(dto.getTicketType());
-                        ticket.setDeviceType(dto.getDeviceType());
-                        ticket.setOs(dto.getOs());
-                        ticket.setApplication(dto.getApplication());
-                        ticket.setBrowser(dto.getBrowser());
-                        ticket.setOsVersion(dto.getOsVersion());
-                        ticket.setApplicationVersion(dto.getApplicationVersion());
-                        ticket.setBrowserVersion(dto.getBrowserVersion());
+                if (ticketMessageRepo.findAllByTicketAndMessageTypeAndOwner(ticket,MessageType.REPLY,ticket.getAssignedTo()).size() == 0) {
+                    ticket.setTitle(dto.getTitle());
+                    ticket.setDescription(dto.getDescription());
+                    ticket.setTicketType(dto.getTicketType());
+                    ticket.setDeviceType(dto.getDeviceType());
+                    ticket.setOs(dto.getOs());
+                    ticket.setApplication(dto.getApplication());
+                    ticket.setBrowser(dto.getBrowser());
+                    ticket.setOsVersion(dto.getOsVersion());
+                    ticket.setApplicationVersion(dto.getApplicationVersion());
+                    ticket.setBrowserVersion(dto.getBrowserVersion());
 
-                        if (dto.getAttachments().size() > 0) {
-                            Set<String> attachments = ticket.getAttachments();
-                            for (String s : dto.getAttachments()) {
-                                attachments.add(s);
-                            }
-                            ticket.setAttachments(attachments);
+                    if (dto.getAttachments().size() > 0) {
+                        Set<String> attachments = ticket.getAttachments();
+                        for (String s : dto.getAttachments()) {
+                            attachments.add(s);
                         }
-                        ticketRepo.save(ticket);
-                        return "OK";
-                    }else {
-                        throw new AlreadyExistsException("ticket can not be updated");
+                        ticket.setAttachments(attachments);
                     }
+                    ticketRepo.save(ticket);
+                    return "OK";
                 }else {
                     throw new AlreadyExistsException("ticket can not be updated");
                 }
