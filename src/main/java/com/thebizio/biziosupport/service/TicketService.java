@@ -360,13 +360,16 @@ public class TicketService {
                     ticket.setOsVersion(dto.getOsVersion());
                     ticket.setApplicationVersion(dto.getApplicationVersion());
                     ticket.setBrowserVersion(dto.getBrowserVersion());
-
                     if (dto.getAttachments().size() > 0) {
                         Set<String> attachments = ticket.getAttachments();
-                        for (String s : dto.getAttachments()) {
-                            attachments.add(s);
+                        if (attachments.isEmpty()) {
+                            ticket.setAttachments(dto.getAttachments());
+                        } else {
+                            for (String s : dto.getAttachments()) {
+                                attachments.add(s);
+                            }
+                            ticket.setAttachments(attachments);
                         }
-                        ticket.setAttachments(attachments);
                     }
                     ticketRepo.save(ticket);
                     return "OK";
