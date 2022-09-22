@@ -321,14 +321,37 @@ public class ClientTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/{ticketRefNo}  update")
     public void ticket_update_test() throws Exception {
+        Set<String> attachmentsNew = new HashSet<>();
+        attachmentsNew.add("D");
+        attachmentsNew.add("E");
+
         TicketUpdateDto dto = new TicketUpdateDto();
         dto.setTitle("Updated ticket title");
         dto.setDescription("Updated description");
+        dto.setAttachments(attachmentsNew);
 
         mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 
         assertEquals(ticketRepo.findById(ticket2.getId()).get().getTitle(),dto.getTitle());
+
+        Ticket ticket3 = new Ticket();
+        ticket3.setTitle("Ticket3");
+        ticket3.setDescription("Ticket3 description");
+        ticket3.setStatus(TicketStatus.OPEN);
+        ticket3.setCreatedBy("user3");
+        ticket3.setOpenedBy("TestingUser");
+        ticket3.setAssignedTo("user5");
+        ticketRepo.save(ticket3);
+
+        TicketUpdateDto dtoNew = new TicketUpdateDto();
+        dtoNew.setTitle("Updated ticket 3 title");
+        dtoNew.setDescription("Updated description of ticket 3");
+        dtoNew.setAttachments(attachmentsNew);
+
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket3.getTicketRefNo()),dtoNew)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
+
 
         TicketMessage tm3 = new TicketMessage();
         tm3.setMessage("tm3 message");
