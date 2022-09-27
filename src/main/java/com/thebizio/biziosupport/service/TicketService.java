@@ -49,6 +49,7 @@ public class TicketService {
         return ticketRepo.findByTicketRefNo(ticketRefNo).orElseThrow(() -> new NotFoundException("ticket ref no. not found"));
     }
 
+    @Transactional
     public String createTicket(TicketCreateDto dto,boolean adminUser) {
         Ticket ticket = new Ticket();
         ticket.setTicketType(dto.getTicketType());
@@ -77,16 +78,16 @@ public class TicketService {
             ticket.setOpenedBy(utilService.getAuthUserName());
         }
 
-        Ticket t = ticketRepo.save(ticket);
+        ticketRepo.save(ticket);
+        ticketRepo.flush();
 
         System.out.println("--------------");
-        System.out.println(t.getTicketRefNo());
+        System.out.println(ticket.getTicketRefNo());
         TicketMessage ticketMessage = new TicketMessage();
-        ticketMessage.setMessage(t.getOpenedBy()+" opened ticket "+t.getTicketRefNo());
+        ticketMessage.setMessage(ticket.getOpenedBy()+" opened ticket "+ticket.getTicketRefNo());
         ticketMessage.setMessageType(MessageType.EVENT);
-        ticketMessage.setTicket(t);
+        ticketMessage.setTicket(ticket);
         ticketMessageRepo.save(ticketMessage);
-
         return "OK";
     }
 
