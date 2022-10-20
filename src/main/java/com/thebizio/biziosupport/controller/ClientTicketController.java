@@ -63,4 +63,14 @@ public class ClientTicketController {
     public ResponseEntity<ResponseMessageDto> updateTicketReply(@RequestBody @Valid TicketUpdateReplyDto dto) {
         return ResponseEntity.ok(new ResponseMessageDto(ticketService.updateTicketReply(dto)));
     }
+
+    @PostMapping("/attachments/delete")
+    public ResponseEntity<ResponseMessageDto> deleteTicketAttachments(@RequestBody @Valid TicketAttachmentsDelete dto) {
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.deleteTicketAttachments(dto)));
+    }
+
+    @PostMapping("/reply/attachments/delete")
+    public ResponseEntity<ResponseMessageDto> deleteTicketReplyAttachments(@RequestBody @Valid TicketReplyAttachmentsDelete dto) {
+        return ResponseEntity.ok(new ResponseMessageDto(ticketService.deleteTicketReplyAttachments(dto)));
+    }
 }
