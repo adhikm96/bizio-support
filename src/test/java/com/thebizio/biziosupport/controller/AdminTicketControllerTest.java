@@ -551,4 +551,92 @@ class AdminTicketControllerTest {
 
     }
 
+    @Test
+    @DisplayName("test for /tickets/attachments/delete")
+    public void delete_ticket_attachments_test() throws Exception {
+        Set<String> deleteAttachments = new HashSet<>();
+        deleteAttachments.add("B");
+
+        TicketAttachmentsDelete dto = new TicketAttachmentsDelete();
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
+        dto.setAttachments(deleteAttachments);
+
+        ticketMessageRepo.deleteAll();
+
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/attachments/delete"),dto)).andExpect(status().isUnauthorized());
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        Set<String> afterDeleteAttachments = new HashSet<>();
+        afterDeleteAttachments.add("A");
+        afterDeleteAttachments.add("C");
+
+        assertEquals(afterDeleteAttachments,ticketRepo.findById(ticket1.getId()).get().getAttachments());
+
+        TicketMessage tm3 = new TicketMessage();
+        tm3.setMessage("tm3 message");
+        tm3.setTicket(ticket1);
+        tm3.setOwner(ticket1.getAssignedTo());
+        tm3.setMessageType(MessageType.REPLY);
+        ticketMessageRepo.save(tm3);
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("ticket's attachments can not be deleted")));
+
+        dto.setTicketRefNo(null);
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
+
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
+        dto.setAttachments(null);
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.attachments", is("must not be null")));
+    }
+
+    @Test
+    @DisplayName("test for /tickets/reply/attachments/delete")
+    public void delete_ticket_reply_attachments_test() throws Exception {
+        Set<String> deleteAttachments = new HashSet<>();
+        deleteAttachments.add("B");
+
+        TicketReplyAttachmentsDelete dto = new TicketReplyAttachmentsDelete();
+        dto.setTicketRefNo(ticket1.getTicketRefNo());
+        dto.setTicketMessageId(tm2.getId());
+        dto.setAttachments(deleteAttachments);
+
+        mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/reply/attachments/delete"),dto)).andExpect(status().isUnauthorized());
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"), dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+        Set<String> afterDeleteAttachments = new HashSet<>();
+        afterDeleteAttachments.add("A");
+        afterDeleteAttachments.add("C");
+
+        assertEquals(afterDeleteAttachments,ticketMessageRepo.findById(tm2.getId()).get().getAttachments());
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"), dto)).andExpect(status().isOk())
+                .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
+
+
+        ticket1.setStatus(TicketStatus.CLOSED);
+        ticketRepo.save(ticket1);
+
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("reply's attachments can not be deleted for closed ticket"))).andExpect(jsonPath("$.statusCode", is(400)));
+
+        TicketMessage tm3 = new TicketMessage();
+        tm3.setMessage("tm3 message");
+        tm3.setTicket(ticket1);
+        tm3.setOwner("TestingUser");
+        tm3.setMessageType(MessageType.REPLY);
+        ticketMessageRepo.save(tm3);
+
+        ticket1.setStatus(TicketStatus.OPEN);
+        ticketRepo.save(ticket1);
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"),dto)).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message", is("reply's attachments can not be deleted"))).andExpect(jsonPath("$.statusCode", is(400)));
+    }
+
 }

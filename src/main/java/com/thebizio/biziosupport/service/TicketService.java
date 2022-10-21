@@ -435,4 +435,58 @@ public class TicketService {
         ticketMessageService.createAssignedToTicketMessageEvent(ticket);
         return "OK";
     }
+
+    public String deleteTicketAttachments(TicketAttachmentsDelete dto) {
+        String userName = utilService.getAuthUserName();
+        Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
+        if (ticket.getCreatedBy().equals(userName) || ticket.getOpenedBy().equals(userName)) {
+            if (ticket.getStatus().equals(TicketStatus.OPEN)) {
+                if (ticketMessageRepo.findAllByTicketAndMessageTypeAndOwner(ticket,MessageType.REPLY,ticket.getAssignedTo()).size() == 0) {
+                    for (String s : dto.getAttachments()) {
+                        ticket.getAttachments().remove(s);
+                    }
+                    ticketRepo.save(ticket);
+                    return "OK";
+                }else {
+                    throw new AlreadyExistsException("ticket's attachments can not be deleted");
+                }
+            }else {
+                throw new AlreadyExistsException("can not delete attachments of closed ticket");
+            }
+        }else {
+            throw new AlreadyExistsException("user can not delete attachments");
+        }
+    }
+
+    public String deleteTicketReplyAttachments(TicketReplyAttachmentsDelete dto) {
+        TicketMessage ticketMessage = ticketMessageRepo.findById(dto.getTicketMessageId()).orElseThrow(() -> new NotFoundException("ticket message id not found"));
+        if (ticketMessage.getOwner().equals(utilService.getAuthUserName())) {
+            Optional<TicketMessage> latestTicketMessage = null;
+            if (ticketMessage.getTicket().getStatus().equals(TicketStatus.OPEN)) {
+                if (dto.getTicketRefNo() == null || dto.getTicketRefNo().isEmpty()) {
+                    latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoAndMessageTypeOrderByCreatedDateDesc(ticketMessage.getTicket().getTicketRefNo(),MessageType.REPLY);
+                } else {
+                    latestTicketMessage = ticketMessageRepo.findFirst1ByTicketTicketRefNoAndMessageTypeOrderByCreatedDateDesc(dto.getTicketRefNo(),MessageType.REPLY);
+                }
+
+                if (!latestTicketMessage.isPresent()){
+                    throw new NotFoundException("last ticket message not found");
+                }
+
+                if (ticketMessage.getId() == latestTicketMessage.get().getId()) {
+                    for (String s : dto.getAttachments()) {
+                        ticketMessage.getAttachments().remove(s);
+                    }
+                    ticketMessageRepo.save(ticketMessage);
+                    return "OK";
+                } else {
+                    throw new AlreadyExistsException("reply's attachments can not be deleted");
+                }
+            } else {
+                throw new AlreadyExistsException("reply's attachments can not be deleted for closed ticket");
+            }
+        }else {
+            throw new NotFoundException("user can not delete reply's attachments");
+        }
+    }
 }
