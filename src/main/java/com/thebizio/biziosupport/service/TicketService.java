@@ -12,6 +12,7 @@ import com.thebizio.biziosupport.repo.TicketRepo;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
@@ -23,6 +24,9 @@ import java.util.*;
 
 @Service
 public class TicketService {
+
+    @Value(("${enable-notifications}"))
+    private String ENABLE_NOTIFICATIONS;
 
     @Autowired
     private UtilService utilService;
@@ -580,7 +584,12 @@ public class TicketService {
         map.put("adminUserName", adminUserName);
         map.put("userName", userName);
         map.put("ticketRefNo", ticketRefNo);
-        emailService.sendMailMimeWithHtml(recipientAddress, subject, map, templateName);
+
+        System.out.println(ENABLE_NOTIFICATIONS);
+
+        if(ENABLE_NOTIFICATIONS.equals("true")){
+            emailService.sendMailMimeWithHtml(recipientAddress, subject, map, templateName);
+        }
         return true;
     }
 }
