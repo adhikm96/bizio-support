@@ -40,6 +40,9 @@ public class TicketService {
     private TicketMessageService ticketMessageService;
 
     @Autowired
+    private EmailService emailService;
+
+    @Autowired
     private TicketMessageRepo ticketMessageRepo;
     public Ticket findById(UUID id){
         return ticketRepo.findById(id).orElseThrow(() -> new NotFoundException("ticket not found"));
@@ -88,6 +91,10 @@ public class TicketService {
         ticketMessage.setMessageType(MessageType.EVENT);
         ticketMessage.setTicket(ticket);
         ticketMessageRepo.save(ticketMessage);
+
+        if (!ticket.getCreatedBy().equals(ticket.getOpenedBy())){
+            sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Created","ticket-created-notification-to-user.ftl");
+        }
         return "OK";
     }
 
@@ -233,21 +240,22 @@ public class TicketService {
         }
     }
 
-    public void createTicketMessage(Ticket ticket,TicketStatus status){
+    public void createTicketMessage(Ticket ticket,TicketStatus status,String userName){
         if (status.equals(TicketStatus.OPEN)) {
             List<TicketMessage> ticketMessageFound = ticketMessageRepo.findAllByTicketAndMessageTypeAndMessageLike(ticket,MessageType.EVENT,"%opened ticket%");
             TicketMessage ticketMessage = new TicketMessage();
             if (ticketMessageFound.size() > 0){
-                ticketMessage.setMessage(utilService.getAuthUserName()+" reopened ticket "+ticket.getTicketRefNo());
+                ticketMessage.setMessage(userName+" reopened ticket "+ticket.getTicketRefNo());
+                sendTicketReOpenedNotification(ticket,userName);
             }else {
-                ticketMessage.setMessage(utilService.getAuthUserName()+" opened ticket "+ticket.getTicketRefNo());
+                ticketMessage.setMessage(userName+" opened ticket "+ticket.getTicketRefNo());
             }
             ticketMessage.setTicket(ticket);
             ticketMessage.setMessageType(MessageType.EVENT);
             ticketMessageRepo.save(ticketMessage);
         } else if (status.equals(TicketStatus.CLOSED)){
             TicketMessage ticketMessage = new TicketMessage();
-            ticketMessage.setMessage(utilService.getAuthUserName()+" closed ticket "+ticket.getTicketRefNo());
+            ticketMessage.setMessage(userName+" closed ticket "+ticket.getTicketRefNo());
             ticketMessage.setMessageType(MessageType.EVENT);
             ticketMessage.setTicket(ticket);
             ticketMessageRepo.save(ticketMessage);
@@ -262,7 +270,7 @@ public class TicketService {
                 ticket.setStatus(TicketStatus.OPEN);
                 ticket.setOpenedBy(userName);
                 ticketRepo.save(ticket);
-                createTicketMessage(ticket, TicketStatus.OPEN);
+                createTicketMessage(ticket, TicketStatus.OPEN,userName);
             }
         } else if (dto.getStatus().equals("Close")) {
             if (ticket.getStatus().equals(TicketStatus.CLOSED)){
@@ -271,13 +279,55 @@ public class TicketService {
                 ticket.setStatus(TicketStatus.CLOSED);
                 ticket.setClosedBy(userName);
                 ticketRepo.save(ticket);
-                createTicketMessage(ticket, TicketStatus.CLOSED);
+                createTicketMessage(ticket, TicketStatus.CLOSED,userName);
+                sendTicketClosedNotification(ticket);
             }
         } else {
             throw new NotFoundException("status should be Open or Close");
         }
     }
 
+    void sendTicketClosedNotification(Ticket ticket){
+        if (!ticket.getCreatedBy().equals(ticket.getOpenedBy()) && ticket.getCreatedBy().equals(ticket.getClosedBy())){
+            sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Closed","ticket-closed-by-bizio-admin-notification-to-user.ftl");
+            if (ticket.getAssignedTo() != null){
+                sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Ticket Closed","ticket-closed-notification-to-admin.ftl");
+            }
+        } else if (ticket.getOpenedBy().equals(ticket.getClosedBy())) {
+            if (ticket.getAssignedTo() != null){
+                sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Ticket Closed","ticket-closed-notification-to-admin.ftl");
+            }
+        } else if (ticket.getAssignedTo().equals(ticket.getClosedBy())) {
+            sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Closed","ticket-closed-notification-to-user.ftl");
+        }
+    }
+
+    void sendTicketReOpenedNotification(Ticket ticket, String username){
+        if (ticket.getCreatedBy().equals(username) && !ticket.getCreatedBy().equals(ticket.getOpenedBy())){
+            sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket ReOpened","ticket-reopened-by-bizio-admin-notification-to-user.ftl");
+            if (ticket.getAssignedTo() != null){
+                sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Ticket ReOpened","ticket-reopened-notification-to-admin.ftl");
+            }
+        } else if (ticket.getOpenedBy().equals(username)) {
+            if (ticket.getAssignedTo() != null){
+                sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Ticket ReOpened","ticket-reopened-notification-to-admin.ftl");
+            }
+        } else if (ticket.getAssignedTo().equals(username)) {
+            sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket ReOpened","ticket-reopened-notification-to-user.ftl");
+        }
+    }
+
+    void sendEmailToAdmin(String userName,Ticket ticket,String subject, String template){
+        UserDetailsDto adminUser = externalApiService.searchUser(userName,true);
+        sendSuccessMail(adminUser.getEmail(),subject,template,
+                adminUser.getFirstName(),adminUser.getLastName(),ticket.getOpenedBy(),adminUser.getUserName(),ticket.getTicketRefNo());
+    }
+
+    void sendEmailToUser(String userName,Ticket ticket,String subject, String template){
+        UserDetailsDto user = externalApiService.searchUser(userName,false);
+        sendSuccessMail(user.getEmail(),subject,template,
+                user.getFirstName(),user.getLastName(),user.getUserName(),ticket.getAssignedTo(),ticket.getTicketRefNo());
+    }
 
     public String replyTicket(TicketReplyDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
@@ -297,6 +347,12 @@ public class TicketService {
             tm.setTicket(ticket);
             tm.setMessageType(MessageType.REPLY);
             ticketMessageRepo.save(tm);
+
+            if (userName.equals(ticketAssignedTo)){
+                sendEmailToUser(ticket.getOpenedBy(),ticket,"Comment Posted","ticket-reply-notification-to-user.ftl");
+            } else if (userName.equals(ticket.getOpenedBy()) && !ticketAssignedTo.isEmpty()) {
+                sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Comment Posted","ticket-reply-notification-to-admin.ftl");
+            }
             return "OK";
         } else {
             throw new NotFoundException("user can not reply to this ticket");
@@ -316,9 +372,15 @@ public class TicketService {
     @Transactional
     public String assignTicket(TicketAssignDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
-        ticket.setAssignedTo(externalApiService.getAdminUser(dto.getAdminUserId()));
+        UserDetailsDto adminUser = externalApiService.searchUser(dto.getAdminUserId(),true);
+        ticket.setAssignedTo(adminUser.getUserName());
         ticketRepo.save(ticket);
         ticketMessageService.createAssignedToTicketMessageEvent(ticket);
+
+        sendSuccessMail(adminUser.getEmail(),"Ticket Claimed","ticket-assigned-notification-to-admin.ftl",
+                adminUser.getFirstName(),adminUser.getLastName(),adminUser.getUserName(),ticket.getCreatedBy(),ticket.getTicketRefNo());
+
+        sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Claimed","ticket-assigned-notification-to-user.ftl");
         return "OK";
     }
 
@@ -332,7 +394,6 @@ public class TicketService {
     }
 
     public Object getTicketMetrics(boolean adminUser) {
-
         if(adminUser){
             Long ticketsCount = ticketRepo.countTickets();
             List<TicketStatusMetricsDto>  ticketsStatusCount = ticketRepo.countTicketByStatus();
@@ -351,8 +412,13 @@ public class TicketService {
         if (ticket.getCreatedBy().equals(userName) || ticket.getOpenedBy().equals(userName)) {
             if (ticket.getStatus().equals(TicketStatus.OPEN)) {
                 if (ticketMessageRepo.findAllByTicketAndMessageTypeAndOwner(ticket,MessageType.REPLY,ticket.getAssignedTo()).size() == 0) {
+                    Boolean sentEmail = false;
                     ticket.setTitle(dto.getTitle());
-                    ticket.setDescription(dto.getDescription());
+
+                    if (ticket.getDescription() != dto.getDescription()){
+                        ticket.setDescription(dto.getDescription());
+                        sentEmail = true;
+                    }
                     ticket.setTicketType(dto.getTicketType());
                     ticket.setDeviceType(dto.getDeviceType());
                     ticket.setOs(dto.getOs());
@@ -373,6 +439,14 @@ public class TicketService {
                         }
                     }
                     ticketRepo.save(ticket);
+
+                    if (sentEmail){
+                        if (userName.equals(ticket.getCreatedBy())){
+                            sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Updated","ticket-update-notification-to-user.ftl");
+                        } else if (userName.equals(ticket.getOpenedBy())) {
+                            sendEmailToAdmin(ticket.getCreatedBy(),ticket,"Ticket Updated","ticket-update-notification-to-admin.ftl");
+                        }
+                    }
                     return "OK";
                 }else {
                     throw new AlreadyExistsException("ticket can not be updated");
@@ -415,6 +489,12 @@ public class TicketService {
                         }
                     }
                     ticketMessageRepo.save(ticketMessage);
+                    Ticket ticket = ticketMessage.getTicket();
+                    if(utilService.getAuthUserName().equals(ticket.getAssignedTo())){
+                        sendEmailToUser(ticket.getOpenedBy(),ticket,"Comment Edited","ticket-reply-edit-notification-to-user.ftl");
+                    } else if (utilService.getAuthUserName().equals(ticket.getOpenedBy())) {
+                        sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Comment Edited","ticket-reply-edit-notification-to-admin.ftl");
+                    }
                     return "OK";
                 } else {
                     throw new AlreadyExistsException("reply can not be updated");
@@ -430,7 +510,7 @@ public class TicketService {
     public String claimTicket(TicketClaimDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userName = utilService.getAuthUserName();
-        ticket.setAssignedTo(externalApiService.getAdminUser(userName));
+        ticket.setAssignedTo(externalApiService.searchUser(userName,true).getUserName());
         ticketRepo.save(ticket);
         ticketMessageService.createAssignedToTicketMessageEvent(ticket);
         return "OK";
@@ -488,5 +568,19 @@ public class TicketService {
         }else {
             throw new NotFoundException("user can not delete reply's attachments");
         }
+    }
+
+    public boolean sendSuccessMail(String email, String subject, String templateName,
+                                   String firstName,String LastName, String userName,
+                                   String adminUserName, String ticketRefNo) {
+        String recipientAddress = email;
+        Map<String, Object> map = new HashMap<>();
+        map.put("firstName", firstName);
+        map.put("lastName", LastName);
+        map.put("adminUserName", adminUserName);
+        map.put("userName", userName);
+        map.put("ticketRefNo", ticketRefNo);
+        emailService.sendMailMimeWithHtml(recipientAddress, subject, map, templateName);
+        return true;
     }
 }
