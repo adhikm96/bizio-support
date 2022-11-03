@@ -9,6 +9,6 @@ public class ApiResponseEntity {
 
     private Integer statusCode;
     private String message;
-    private AdminUserDetailsDto resObj;
+    private UserDetailsDto resObj;
 
 }

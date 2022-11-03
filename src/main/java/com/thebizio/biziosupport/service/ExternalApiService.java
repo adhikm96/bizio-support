@@ -3,6 +3,7 @@ package com.thebizio.biziosupport.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.thebizio.biziosupport.dto.ApiResponseEntity;
+import com.thebizio.biziosupport.dto.UserDetailsDto;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,11 +21,16 @@ public class ExternalApiService {
     @Autowired
     private RestTemplate restTemplate;
 
-    public String getAdminUser(String userName){
-        String url = bizioAdminCenterUrl+"/api/v1/internal/users/search/"+userName;
+    public UserDetailsDto searchUser(String userName, Boolean adminSearch){
+        String url = null;
+        if (adminSearch){
+            url = bizioAdminCenterUrl+"/api/v1/internal/users/search/"+userName;
+        }else {
+            url = bizioAdminCenterUrl+"/api/v1/internal/users/search/user/"+userName;
+        }
         ApiResponseEntity response = null;
         ResponseEntity<String> errorResponse = null;
-        String userNameFound = null;
+        UserDetailsDto userNameFound = null;
         try {
             response = restTemplate.getForEntity(url,ApiResponseEntity.class).getBody();
         }catch(HttpStatusCodeException e) {
@@ -52,7 +58,7 @@ public class ExternalApiService {
             }
         }else {
             if (response.getStatusCode().equals(200)){
-                userNameFound = response.getResObj().getUserName();
+                userNameFound = response.getResObj();
             }else {
                 throw new NotFoundException(response.getStatusCode().toString()+" Error");
             }
