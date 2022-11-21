@@ -393,6 +393,8 @@ class AdminTicketControllerTest {
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
+        verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+
         dto.setTicketRefNo(null);
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
