@@ -32,4 +32,5 @@ public class TicketCreateDto {
     private String applicationVersion;
     private String browserVersion;
     private String openedBy;
+    private Boolean issueOnWebBrowser = true;
 }

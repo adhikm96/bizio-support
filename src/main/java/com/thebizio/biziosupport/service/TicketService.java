@@ -65,6 +65,10 @@ public class TicketService {
         ticket.setDeviceType(dto.getDeviceType());
         ticket.setOs(dto.getOs());
         ticket.setApplication(dto.getApplication());
+        if (dto.getIssueOnWebBrowser() == true && dto.getBrowser() == null){
+            throw new NotFoundException("browser must not be null");
+        }
+        ticket.setIssueOnWebBrowser(dto.getIssueOnWebBrowser());
         ticket.setBrowser(dto.getBrowser());
         ticket.setAttachments(dto.getAttachments());
         ticket.setOsVersion(dto.getOsVersion());
@@ -88,8 +92,6 @@ public class TicketService {
         ticketRepo.save(ticket);
         ticketRepo.flush();
 
-        System.out.println("--------------");
-        System.out.println(ticket.getTicketRefNo());
         TicketMessage ticketMessage = new TicketMessage();
         ticketMessage.setMessage(ticket.getOpenedBy()+" opened ticket "+ticket.getTicketRefNo());
         ticketMessage.setMessageType(MessageType.EVENT);
@@ -274,7 +276,7 @@ public class TicketService {
                 throw new AlreadyExistsException("ticket is already open");
             }else {
                 ticket.setStatus(TicketStatus.OPEN);
-                ticket.setOpenedBy(userName);
+//                ticket.setOpenedBy(userName);
                 ticketRepo.save(ticket);
                 createTicketMessage(ticket, TicketStatus.OPEN,userName);
             }
