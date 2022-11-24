@@ -57,6 +57,9 @@ public class Ticket extends BaseEntity{
     private String applicationVersion;
     private String browserVersion;
 
+    @Column(columnDefinition = "boolean default true")
+    private Boolean issueOnWebBrowser;
+
     @Convert(converter = SetConvertor.class)
     private Set<String> attachments = new HashSet<>();
 

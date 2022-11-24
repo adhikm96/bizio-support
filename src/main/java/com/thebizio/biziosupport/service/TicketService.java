@@ -65,6 +65,10 @@ public class TicketService {
         ticket.setDeviceType(dto.getDeviceType());
         ticket.setOs(dto.getOs());
         ticket.setApplication(dto.getApplication());
+        if (dto.getIssueOnWebBrowser() == true && dto.getBrowser() == null){
+            throw new NotFoundException("browser must not be null");
+        }
+        ticket.setIssueOnWebBrowser(dto.getIssueOnWebBrowser());
         ticket.setBrowser(dto.getBrowser());
         ticket.setAttachments(dto.getAttachments());
         ticket.setOsVersion(dto.getOsVersion());
@@ -88,8 +92,6 @@ public class TicketService {
         ticketRepo.save(ticket);
         ticketRepo.flush();
 
-        System.out.println("--------------");
-        System.out.println(ticket.getTicketRefNo());
         TicketMessage ticketMessage = new TicketMessage();
         ticketMessage.setMessage(ticket.getOpenedBy()+" opened ticket "+ticket.getTicketRefNo());
         ticketMessage.setMessageType(MessageType.EVENT);
@@ -272,7 +274,7 @@ public class TicketService {
                 throw new AlreadyExistsException("ticket is already open");
             }else {
                 ticket.setStatus(TicketStatus.OPEN);
-                ticket.setOpenedBy(userName);
+//                ticket.setOpenedBy(userName);
                 ticketRepo.save(ticket);
                 createTicketMessage(ticket, TicketStatus.OPEN,userName);
             }
@@ -291,43 +293,55 @@ public class TicketService {
         }
     }
 
-    void sendTicketClosedNotification(Ticket ticket){
-        if (!ticket.getCreatedBy().equals(ticket.getOpenedBy()) && ticket.getCreatedBy().equals(ticket.getClosedBy())){
+    public String getAssignedTo(Ticket ticket){
+        String assignedTo;
+        if (ticket.getAssignedTo() == null){
+            assignedTo = "";
+        }else {
+            assignedTo = ticket.getAssignedTo();
+        }
+        return assignedTo;
+    }
+
+    public void sendTicketClosedNotification(Ticket ticket){
+        String assignedTo = getAssignedTo(ticket);
+        if (!ticket.getCreatedBy().equals(ticket.getOpenedBy()) && ticket.getCreatedBy().equals(ticket.getClosedBy()) && !ticket.getCreatedBy().equals(assignedTo)){
             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Closed","ticket-closed-by-bizio-admin-notification-to-user.ftl");
-            if (ticket.getAssignedTo() != null){
+            if (!assignedTo.isEmpty()){
                 sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Ticket Closed","ticket-closed-notification-to-admin.ftl");
             }
         } else if (ticket.getOpenedBy().equals(ticket.getClosedBy())) {
-            if (ticket.getAssignedTo() != null){
+            if (!assignedTo.isEmpty()){
                 sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Ticket Closed","ticket-closed-notification-to-admin.ftl");
             }
-        } else if (ticket.getAssignedTo().equals(ticket.getClosedBy())) {
+        } else if (assignedTo.equals(ticket.getClosedBy())) {
             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Closed","ticket-closed-notification-to-user.ftl");
         }
     }
 
-    void sendTicketReOpenedNotification(Ticket ticket, String username){
-        if (ticket.getCreatedBy().equals(username) && !ticket.getCreatedBy().equals(ticket.getOpenedBy())){
+    public void sendTicketReOpenedNotification(Ticket ticket, String username){
+        String assignedTo = getAssignedTo(ticket);
+        if (ticket.getCreatedBy().equals(username) && !ticket.getCreatedBy().equals(ticket.getOpenedBy()) && !ticket.getCreatedBy().equals(assignedTo)){
             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket ReOpened","ticket-reopened-by-bizio-admin-notification-to-user.ftl");
-            if (ticket.getAssignedTo() != null){
+            if (!assignedTo.isEmpty()){
                 sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Ticket ReOpened","ticket-reopened-notification-to-admin.ftl");
             }
         } else if (ticket.getOpenedBy().equals(username)) {
-            if (ticket.getAssignedTo() != null){
+            if (!assignedTo.isEmpty()){
                 sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Ticket ReOpened","ticket-reopened-notification-to-admin.ftl");
             }
-        } else if (ticket.getAssignedTo().equals(username)) {
+        } else if (assignedTo.equals(username)) {
             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket ReOpened","ticket-reopened-notification-to-user.ftl");
         }
     }
 
-    void sendEmailToAdmin(String userName,Ticket ticket,String subject, String template){
+    public void sendEmailToAdmin(String userName,Ticket ticket,String subject, String template){
         UserDetailsDto adminUser = externalApiService.searchUser(userName,true);
         sendSuccessMail(adminUser.getEmail(),subject,template,
                 adminUser.getFirstName(),adminUser.getLastName(),ticket.getOpenedBy(),adminUser.getUserName(),ticket.getTicketRefNo());
     }
 
-    void sendEmailToUser(String userName,Ticket ticket,String subject, String template){
+    public void sendEmailToUser(String userName,Ticket ticket,String subject, String template){
         UserDetailsDto user = externalApiService.searchUser(userName,false);
         sendSuccessMail(user.getEmail(),subject,template,
                 user.getFirstName(),user.getLastName(),user.getUserName(),ticket.getAssignedTo(),ticket.getTicketRefNo());
@@ -511,12 +525,15 @@ public class TicketService {
         }
     }
 
+    @Transactional
     public String claimTicket(TicketClaimDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
         String userName = utilService.getAuthUserName();
         ticket.setAssignedTo(externalApiService.searchUser(userName,true).getUserName());
         ticketRepo.save(ticket);
         ticketMessageService.createAssignedToTicketMessageEvent(ticket);
+
+        sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Claimed","ticket-assigned-notification-to-user.ftl");
         return "OK";
     }
 
@@ -584,8 +601,6 @@ public class TicketService {
         map.put("adminUserName", adminUserName);
         map.put("userName", userName);
         map.put("ticketRefNo", ticketRefNo);
-
-        System.out.println(ENABLE_NOTIFICATIONS);
 
         if(ENABLE_NOTIFICATIONS.equals("true")){
             emailService.sendMailMimeWithHtml(recipientAddress, subject, map, templateName);
