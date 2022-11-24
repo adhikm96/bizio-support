@@ -99,7 +99,6 @@ public class TicketService {
         ticketMessageRepo.save(ticketMessage);
 
         if (!ticket.getCreatedBy().equals(ticket.getOpenedBy())){
-            System.out.println("send ticket creation email to user...");
             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Created","ticket-created-notification-to-user.ftl");
         }
         return "OK";
@@ -253,7 +252,6 @@ public class TicketService {
             TicketMessage ticketMessage = new TicketMessage();
             if (ticketMessageFound.size() > 0){
                 ticketMessage.setMessage(userName+" reopened ticket "+ticket.getTicketRefNo());
-                System.out.println("send ticket reopened email...");
                 sendTicketReOpenedNotification(ticket,userName);
             }else {
                 ticketMessage.setMessage(userName+" opened ticket "+ticket.getTicketRefNo());
@@ -288,7 +286,6 @@ public class TicketService {
                 ticket.setClosedBy(userName);
                 ticketRepo.save(ticket);
                 createTicketMessage(ticket, TicketStatus.CLOSED,userName);
-                System.out.println("send ticket close email...");
                 sendTicketClosedNotification(ticket);
             }
         } else {
@@ -339,19 +336,15 @@ public class TicketService {
     }
 
     public void sendEmailToAdmin(String userName,Ticket ticket,String subject, String template){
-        System.out.println("sending email to admin...");
         UserDetailsDto adminUser = externalApiService.searchUser(userName,true);
         sendSuccessMail(adminUser.getEmail(),subject,template,
                 adminUser.getFirstName(),adminUser.getLastName(),ticket.getOpenedBy(),adminUser.getUserName(),ticket.getTicketRefNo());
-        System.out.println("email has been sent to "+adminUser.getEmail());
     }
 
     public void sendEmailToUser(String userName,Ticket ticket,String subject, String template){
-        System.out.println("sending email to user...");
         UserDetailsDto user = externalApiService.searchUser(userName,false);
         sendSuccessMail(user.getEmail(),subject,template,
                 user.getFirstName(),user.getLastName(),user.getUserName(),ticket.getAssignedTo(),ticket.getTicketRefNo());
-        System.out.println("email has been sent to "+user.getEmail());
     }
 
     public String replyTicket(TicketReplyDto dto) {
@@ -374,10 +367,8 @@ public class TicketService {
             ticketMessageRepo.save(tm);
 
             if (userName.equals(ticketAssignedTo)){
-                System.out.println("send ticket reply email to user...");
                 sendEmailToUser(ticket.getOpenedBy(),ticket,"Comment Posted","ticket-reply-notification-to-user.ftl");
             } else if (userName.equals(ticket.getOpenedBy()) && !ticketAssignedTo.isEmpty()) {
-                System.out.println("send ticket reply email to admin...");
                 sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Comment Posted","ticket-reply-notification-to-admin.ftl");
             }
             return "OK";
@@ -404,13 +395,9 @@ public class TicketService {
         ticketRepo.save(ticket);
         ticketMessageService.createAssignedToTicketMessageEvent(ticket);
 
-        System.out.println("send ticket assigned email to admin...");
-        System.out.println("sending email to admin...");
         sendSuccessMail(adminUser.getEmail(),"Ticket Claimed","ticket-assigned-notification-to-admin.ftl",
                 adminUser.getFirstName(),adminUser.getLastName(),adminUser.getUserName(),ticket.getCreatedBy(),ticket.getTicketRefNo());
-        System.out.println("email has been sent to "+adminUser.getEmail());
 
-        System.out.println("send ticket assigned email to user...");
         sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Claimed","ticket-assigned-notification-to-user.ftl");
         return "OK";
     }
@@ -473,10 +460,8 @@ public class TicketService {
 
                     if (sentEmail){
                         if (userName.equals(ticket.getCreatedBy())){
-                            System.out.println("send ticket updated email to user...");
                             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Updated","ticket-update-notification-to-user.ftl");
                         } else if (userName.equals(ticket.getOpenedBy())) {
-                            System.out.println("send ticket updated email to admin...");
                             sendEmailToAdmin(ticket.getCreatedBy(),ticket,"Ticket Updated","ticket-update-notification-to-admin.ftl");
                         }
                     }
@@ -524,10 +509,8 @@ public class TicketService {
                     ticketMessageRepo.save(ticketMessage);
                     Ticket ticket = ticketMessage.getTicket();
                     if(utilService.getAuthUserName().equals(ticket.getAssignedTo())){
-                        System.out.println("send ticket reply updated email to user...");
                         sendEmailToUser(ticket.getOpenedBy(),ticket,"Comment Edited","ticket-reply-edit-notification-to-user.ftl");
                     } else if (utilService.getAuthUserName().equals(ticket.getOpenedBy())) {
-                        System.out.println("send ticket reply updated email to admin...");
                         sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Comment Edited","ticket-reply-edit-notification-to-admin.ftl");
                     }
                     return "OK";
@@ -550,7 +533,6 @@ public class TicketService {
         ticketRepo.save(ticket);
         ticketMessageService.createAssignedToTicketMessageEvent(ticket);
 
-        System.out.println("send ticket claim email to user...");
         sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Claimed","ticket-assigned-notification-to-user.ftl");
         return "OK";
     }
