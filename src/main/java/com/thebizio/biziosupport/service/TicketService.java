@@ -5,6 +5,7 @@ import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
 import com.thebizio.biziosupport.enums.MessageType;
 import com.thebizio.biziosupport.enums.TicketStatus;
+import com.thebizio.biziosupport.enums.TicketType;
 import com.thebizio.biziosupport.exception.AlreadyExistsException;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
@@ -65,7 +66,7 @@ public class TicketService {
         ticket.setDeviceType(dto.getDeviceType());
         ticket.setOs(dto.getOs());
         ticket.setApplication(dto.getApplication());
-        if (dto.getIssueOnWebBrowser() == true && dto.getBrowser() == null){
+        if (dto.getIssueOnWebBrowser() == true && dto.getBrowser() == null && dto.getTicketType() == TicketType.TECHNICAL) {
             throw new NotFoundException("browser must not be null");
         }
         ticket.setIssueOnWebBrowser(dto.getIssueOnWebBrowser());
