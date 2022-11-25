@@ -336,13 +336,21 @@ public class TicketService {
         }
     }
 
+    public void userNameNullCheck(String userName){
+        if(userName == null || userName.isEmpty()){
+            throw new NotFoundException("userName can not be null");
+        }
+    }
+
     public void sendEmailToAdmin(String userName,Ticket ticket,String subject, String template){
+        userNameNullCheck(userName);
         UserDetailsDto adminUser = externalApiService.searchUser(userName,true);
         sendSuccessMail(adminUser.getEmail(),subject,template,
                 adminUser.getFirstName(),adminUser.getLastName(),ticket.getOpenedBy(),adminUser.getUserName(),ticket.getTicketRefNo());
     }
 
     public void sendEmailToUser(String userName,Ticket ticket,String subject, String template){
+        userNameNullCheck(userName);
         UserDetailsDto user = externalApiService.searchUser(userName,false);
         sendSuccessMail(user.getEmail(),subject,template,
                 user.getFirstName(),user.getLastName(),user.getUserName(),ticket.getAssignedTo(),ticket.getTicketRefNo());
