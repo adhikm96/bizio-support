@@ -61,7 +61,7 @@
                               color: #000000;
                             "
                           >
-                            <div class="card__title">Ticket Assigned</div>
+                            <div class="card__title">Ticket Created</div>
                           </div>
                         </td>
                       </tr>
@@ -109,7 +109,7 @@
                               color: #66737f;
                             "
                           >
-                          Ticket number ${ ticketRefNo } has been assigned to admin ${ adminUserName }.
+                          New ticket has been created by Bizio admin behalf of yours. The ticket number is ${ ticketRefNo }.
                           </div>
                         </td>
                       </tr>

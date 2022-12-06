@@ -61,7 +61,7 @@
                               color: #000000;
                             "
                           >
-                            <div class="card__title">Ticket Assigned</div>
+                            <div class="card__title">Ticket Claimed</div>
                           </div>
                         </td>
                       </tr>
@@ -109,7 +109,7 @@
                               color: #66737f;
                             "
                           >
-                          Ticket number ${ ticketRefNo } has been assigned to admin ${ adminUserName }.
+                          Ticket number ${ ticketRefNo } has been claimed by you.
                           </div>
                         </td>
                       </tr>

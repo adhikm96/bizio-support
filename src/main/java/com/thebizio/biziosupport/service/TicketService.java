@@ -100,6 +100,8 @@ public class TicketService {
         ticketMessageRepo.save(ticketMessage);
 
         if (!ticket.getCreatedBy().equals(ticket.getOpenedBy())){
+            sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Created","ticket-created-by-admin-notification-to-user.ftl");
+        }else {
             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Created","ticket-created-notification-to-user.ftl");
         }
         return "OK";
@@ -404,10 +406,10 @@ public class TicketService {
         ticketRepo.save(ticket);
         ticketMessageService.createAssignedToTicketMessageEvent(ticket);
 
-        sendSuccessMail(adminUser.getEmail(),"Ticket Claimed","ticket-assigned-notification-to-admin.ftl",
+        sendSuccessMail(adminUser.getEmail(),"Ticket Assigned","ticket-assigned-notification-to-admin.ftl",
                 adminUser.getFirstName(),adminUser.getLastName(),adminUser.getUserName(),ticket.getCreatedBy(),ticket.getTicketRefNo());
 
-        sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Claimed","ticket-assigned-notification-to-user.ftl");
+        sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Assigned","ticket-assigned-notification-to-user.ftl");
         return "OK";
     }
 
@@ -471,7 +473,8 @@ public class TicketService {
                         if (userName.equals(ticket.getCreatedBy())){
                             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Updated","ticket-update-notification-to-user.ftl");
                         } else if (userName.equals(ticket.getOpenedBy())) {
-                            sendEmailToAdmin(ticket.getCreatedBy(),ticket,"Ticket Updated","ticket-update-notification-to-admin.ftl");
+                            if (ticket.getOpenedBy() != null && !ticket.getOpenedBy().isEmpty())
+                            sendEmailToAdmin(ticket.getOpenedBy(),ticket,"Ticket Updated","ticket-update-notification-to-admin.ftl");
                         }
                     }
                     return "OK";
@@ -537,12 +540,14 @@ public class TicketService {
     @Transactional
     public String claimTicket(TicketClaimDto dto) {
         Ticket ticket = findByTicketRefNo(dto.getTicketRefNo());
-        String userName = utilService.getAuthUserName();
-        ticket.setAssignedTo(externalApiService.searchUser(userName,true).getUserName());
+        UserDetailsDto adminUser = externalApiService.searchUser(utilService.getAuthUserName(),true);
+        ticket.setAssignedTo(adminUser.getUserName());
         ticketRepo.save(ticket);
         ticketMessageService.createAssignedToTicketMessageEvent(ticket);
 
-        sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Claimed","ticket-assigned-notification-to-user.ftl");
+        sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Assigned","ticket-assigned-notification-to-user.ftl");
+        sendSuccessMail(adminUser.getEmail(),"Ticket Claimed","ticket-claimed-notification-to-admin.ftl",
+                adminUser.getFirstName(),adminUser.getLastName(),adminUser.getUserName(),ticket.getCreatedBy(),ticket.getTicketRefNo());
         return "OK";
     }
 

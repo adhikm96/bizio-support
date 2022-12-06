@@ -393,7 +393,7 @@ class AdminTicketControllerTest {
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
-        verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         dto.setTicketRefNo(null);
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isBadRequest())
@@ -532,6 +532,8 @@ class AdminTicketControllerTest {
 
         Ticket ticket = ticketRepo.findByTitle("Ticket Event").orElseThrow(() -> new NotFoundException("ticket not found"));
 
+        verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+
         userDetailsDto.setUserName("adminUser");
         TicketAssignDto ticketAssignDto = new TicketAssignDto();
         ticketAssignDto.setTicketRefNo(ticket.getTicketRefNo());
@@ -539,19 +541,19 @@ class AdminTicketControllerTest {
 
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(3)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         userDetailsDto.setUserName("adminUser2");
         ticketAssignDto.setAdminUserId("adminUser2");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(4)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(5)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         userDetailsDto.setUserName("adminUser3");
         ticketAssignDto.setAdminUserId("adminUser3");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(6)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(7)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         when(utilService.getAuthUserName()).thenReturn("adminUser3");
 
@@ -562,7 +564,7 @@ class AdminTicketControllerTest {
         //close ticket
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(7)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(8)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to close ticket again
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
@@ -572,7 +574,7 @@ class AdminTicketControllerTest {
         ticketStatusChangeDto.setStatus("Open");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(8)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(9)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to open ticket again
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
@@ -582,13 +584,13 @@ class AdminTicketControllerTest {
         ticketStatusChangeDto.setStatus("Close");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(9)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(10)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //reopened ticket
         ticketStatusChangeDto.setStatus("Open");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(10)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(11)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket.getTicketRefNo()))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
