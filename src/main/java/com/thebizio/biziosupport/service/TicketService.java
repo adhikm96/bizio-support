@@ -469,12 +469,13 @@ public class TicketService {
                     }
                     ticketRepo.save(ticket);
 
-                    if (sentEmail){
-                        if (userName.equals(ticket.getCreatedBy())){
-                            sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Updated","ticket-update-notification-to-user.ftl");
-                        } else if (userName.equals(ticket.getOpenedBy())) {
-                            if (ticket.getOpenedBy() != null && !ticket.getOpenedBy().isEmpty())
-                            sendEmailToAdmin(ticket.getOpenedBy(),ticket,"Ticket Updated","ticket-update-notification-to-admin.ftl");
+                    if (sentEmail) {
+                        if (userName.equals(ticket.getOpenedBy())) {
+                            if (ticket.getAssignedTo() != null && !ticket.getAssignedTo().isEmpty()) {
+                                sendEmailToAdmin(ticket.getAssignedTo(), ticket, "Ticket Updated", "ticket-update-notification-to-admin.ftl");
+                            }
+                        } else if (userName.equals(ticket.getCreatedBy()) && !ticket.getCreatedBy().equals(ticket.getOpenedBy())) {
+                            sendEmailToUser(ticket.getOpenedBy(), ticket, "Ticket Updated", "ticket-update-notification-to-user.ftl");
                         }
                     }
                     return "OK";
@@ -523,7 +524,9 @@ public class TicketService {
                     if(utilService.getAuthUserName().equals(ticket.getAssignedTo())){
                         sendEmailToUser(ticket.getOpenedBy(),ticket,"Comment Edited","ticket-reply-edit-notification-to-user.ftl");
                     } else if (utilService.getAuthUserName().equals(ticket.getOpenedBy())) {
-                        sendEmailToAdmin(ticket.getAssignedTo(),ticket,"Comment Edited","ticket-reply-edit-notification-to-admin.ftl");
+                        if (ticket.getAssignedTo() != null && !ticket.getAssignedTo().isEmpty()) {
+                            sendEmailToAdmin(ticket.getAssignedTo(), ticket, "Comment Edited", "ticket-reply-edit-notification-to-admin.ftl");
+                        }
                     }
                     return "OK";
                 } else {
