@@ -160,6 +160,8 @@ public class ClientTicketControllerTest {
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
+        verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+
         dto.setTitle(null);
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("must not be null or blank")));
@@ -460,6 +462,8 @@ public class ClientTicketControllerTest {
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),ticketCreateDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
+        verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+
         Ticket ticket = ticketRepo.findByTitle("Ticket Event").orElseThrow(() -> new NotFoundException("ticket not found"));
         ticket.setAssignedTo("admin4");
         ticketRepo.save(ticket);
@@ -470,7 +474,7 @@ public class ClientTicketControllerTest {
         //close ticket
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to close ticket again
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
@@ -480,7 +484,7 @@ public class ClientTicketControllerTest {
         ticketStatusChangeDto.setStatus("Open");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(3)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to open ticket again
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
@@ -490,13 +494,13 @@ public class ClientTicketControllerTest {
         ticketStatusChangeDto.setStatus("Close");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(3)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(4)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //reopened ticket
         ticketStatusChangeDto.setStatus("Open");
         mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
-        verify(emailService, times(4)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
+        verify(emailService, times(5)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/"+ticket.getTicketRefNo()))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))

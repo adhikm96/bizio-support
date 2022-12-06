@@ -109,7 +109,7 @@
                               color: #66737f;
                             "
                           >
-                          New ticket has been created by Bizio admin behalf of yours. The ticket number is ${ ticketRefNo }.
+                          New ticket has been created by you. The ticket number is ${ ticketRefNo }.
                           </div>
                         </td>
                       </tr>

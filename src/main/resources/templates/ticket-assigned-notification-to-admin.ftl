@@ -61,7 +61,7 @@
                               color: #000000;
                             "
                           >
-                            <div class="card__title">Ticket Claimed</div>
+                            <div class="card__title">Ticket Assigned</div>
                           </div>
                         </td>
                       </tr>
