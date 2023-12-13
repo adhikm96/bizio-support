@@ -530,57 +530,57 @@ class AdminTicketControllerTest extends BaseTestCase {
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(5)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
-        userDetailsDto.setUserName("adminUser3");
-        ticketAssignDto.setAdminUserId("adminUser3");
+        userDetailsDto.setUserName("admin_user3");
+        ticketAssignDto.setAdminUserId("admin_user3");
         mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(7)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
-//        when(utilService.getAuthUserName()).thenReturn("adminUser3");
+//        when(utilService.getAuthUserName()).thenReturn("admin_user3");
 
         TicketStatusChangeDto ticketStatusChangeDto = new TicketStatusChangeDto();
         ticketStatusChangeDto.setTicketRefNo(ticket.getTicketRefNo());
         ticketStatusChangeDto.setStatus("Close");
 
         //close ticket
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("adminUser3"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(8)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to close ticket again
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("adminUser3"))).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket is already closed")));
 
         //reopened ticket
         ticketStatusChangeDto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("adminUser3"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(9)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to open ticket again
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("adminUser3"))).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket is already open")));
 
         //close ticket
         ticketStatusChangeDto.setStatus("Close");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("adminUser3"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(10)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //reopened ticket
         ticketStatusChangeDto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("adminUser3"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(11)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket.getTicketRefNo()), demoEntityGenerator.getAdminUserDto("adminUser3"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket.getTicketRefNo()), demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj", hasSize(8)))
-                .andExpect(jsonPath("$.resObj[0].message", is("adminUser3 reopened ticket "+ticket.getTicketRefNo())))
-                .andExpect(jsonPath("$.resObj[1].message", is("adminUser3 closed ticket "+ticket.getTicketRefNo())))
-                .andExpect(jsonPath("$.resObj[2].message", is("adminUser3 reopened ticket "+ticket.getTicketRefNo())))
-                .andExpect(jsonPath("$.resObj[3].message", is("adminUser3 closed ticket "+ticket.getTicketRefNo())))
-                .andExpect(jsonPath("$.resObj[4].message", is(ticket.getTicketRefNo()+" is reassigned to adminUser3")))
+                .andExpect(jsonPath("$.resObj[0].message", is("admin_user3 reopened ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[1].message", is("admin_user3 closed ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[2].message", is("admin_user3 reopened ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[3].message", is("admin_user3 closed ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[4].message", is(ticket.getTicketRefNo()+" is reassigned to admin_user3")))
                 .andExpect(jsonPath("$.resObj[5].message", is(ticket.getTicketRefNo()+" is reassigned to adminUser2")))
                 .andExpect(jsonPath("$.resObj[6].message", is(ticket.getTicketRefNo()+" is assigned to adminUser")))
                 .andExpect(jsonPath("$.resObj[7].message", is("user3 opened ticket "+ticket.getTicketRefNo())));
