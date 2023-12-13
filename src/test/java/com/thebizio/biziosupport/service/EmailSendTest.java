@@ -20,8 +20,8 @@ public class EmailSendTest {
     @Test
     void send_email_event_test() {
 
-        listener.emailNotiCnt.set(0);
-        listener.eventManagerNotiCnt.set(0);
+        Listener.eventManagerNotiCnt.set(0);
+        Listener.emailNotiCnt.set(0);
 
         ticketService.sendSuccessMail(
                 "smaple@email.com",
@@ -36,14 +36,13 @@ public class EmailSendTest {
 
         try {
             // wait email to be queued
-            Thread.sleep(500);
+            Thread.sleep(100);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
 
         // check email queue on two queues
-
-        assertEquals(1, listener.emailNotiCnt.intValue());
-        assertEquals(1, listener.eventManagerNotiCnt.intValue());
+        assertEquals(1, Listener.emailNotiCnt.get());
+        assertEquals(1, Listener.eventManagerNotiCnt.get());
     }
 }

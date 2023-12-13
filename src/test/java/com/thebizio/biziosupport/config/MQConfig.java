@@ -1,14 +1,15 @@
 package com.thebizio.biziosupport.config;
 
 import com.thebizio.biziosupport.util.mq.Listener;
-import org.springframework.amqp.core.*;
-import org.springframework.amqp.rabbit.test.RabbitListenerTest;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.Queue;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@RabbitListenerTest
-public class Config {
+public class MQConfig {
 
     @Bean
     DirectExchange emailExchange() {
@@ -39,10 +40,5 @@ public class Config {
     @Bean
     Binding bzEventBinding(Queue bzEventQueue, DirectExchange bzEventExchange) {
         return BindingBuilder.bind(bzEventQueue).to(bzEventExchange).with("bz.support");
-    }
-
-    @Bean
-    public Listener listener() {
-        return new Listener();
     }
 }
