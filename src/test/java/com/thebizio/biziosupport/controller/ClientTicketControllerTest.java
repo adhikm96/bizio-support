@@ -1,5 +1,6 @@
 package com.thebizio.biziosupport.controller;
 
+import com.thebizio.biziosupport.UserDto;
 import com.thebizio.biziosupport.dto.*;
 import com.thebizio.biziosupport.entity.Ticket;
 import com.thebizio.biziosupport.entity.TicketMessage;
@@ -10,14 +11,12 @@ import com.thebizio.biziosupport.repo.TicketRepo;
 import com.thebizio.biziosupport.service.EmailService;
 import com.thebizio.biziosupport.service.ExternalApiService;
 import com.thebizio.biziosupport.service.UtilService;
+import com.thebizio.biziosupport.util.BaseTestCase;
 import com.thebizio.biziosupport.util.ClientKeycloakMockService;
-import com.thebizio.biziosupport.util.ClientUtilTestService;
+import com.thebizio.biziosupport.util.UtilTestService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.*;
 
@@ -32,20 +31,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class ClientTicketControllerTest {
 
-    @Autowired
-    private MockMvc mvc;
-
-    @Autowired
-    private ClientUtilTestService utilTestService;
-
-    @Autowired
-    private ClientKeycloakMockService keycloakMockService;
-
+public class ClientTicketControllerTest extends BaseTestCase {
     @Autowired
     private TicketRepo ticketRepo;
 
@@ -64,23 +51,19 @@ public class ClientTicketControllerTest {
     @Autowired
     private TicketMessageRepo ticketMessageRepo;
 
-    private String getToken() {
-        return keycloakMockService.getToken(null);
-    }
 
     @MockBean
     private UtilService utilService;
+    private UserDto clientDto;
 
     @BeforeAll
     public void beforeAll() {
-        keycloakMockService.mockStart();
         ticketMessageRepo.deleteAll();
         ticketRepo.deleteAll();
     }
 
     @AfterAll
     public void afterAll() {
-        keycloakMockService.mockStop();
         ticketMessageRepo.deleteAll();
         ticketRepo.deleteAll();
     }
@@ -135,6 +118,8 @@ public class ClientTicketControllerTest {
 
         when(utilService.getAuthUserEmail()).thenReturn("Testing@gmail.com");
         when(utilService.getAuthUserName()).thenReturn("TestingUser");
+
+        clientDto = demoEntityGenerator.getClientUserDto("TestingUser", "Testing@gmail.com");
     }
 
     @Test
@@ -157,17 +142,17 @@ public class ClientTicketControllerTest {
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         dto.setTitle(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("must not be null or blank")));
 
         dto.setTitle("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("must not be null or blank")));
     }
 
@@ -178,7 +163,7 @@ public class ClientTicketControllerTest {
 
         //default page number 0 and page size 10
         //openedBy loggedIn user
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets"), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(1)))
                 .andExpect(jsonPath("$.tickets[0].id", is(ticket1.getId().toString())))
                 .andExpect(jsonPath("$.tickets[0].title", is(ticket1.getTitle())))
@@ -190,28 +175,28 @@ public class ClientTicketControllerTest {
 
         //pass page number 1 and page size 5
         List list = new ArrayList<>();
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?page=1&size=5"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?page=1&size=5"), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", is(list)))
                 .andExpect(jsonPath("$.pageSize", is(5)));
 
         //status open filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?status=Open"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?status=Open"), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(1)));
 
         //status closed filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?status=Closed"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?status=Closed"), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(0)));
 
         //ticketRefNo filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?ticketRefNo="+ticket1.getTicketRefNo()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?ticketRefNo="+ticket1.getTicketRefNo()), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(1)));
 
         //assignedTo filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?assignedTo=TestingUser4"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?assignedTo=TestingUser4"), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(1)));
 
         //status open and assignedTo filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?status=Open&assignedTo=TestingUser4"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets?status=Open&assignedTo=TestingUser4"), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(1)));
 
     }
@@ -229,7 +214,7 @@ public class ClientTicketControllerTest {
         assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
 
         //close ticket
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
@@ -237,24 +222,24 @@ public class ClientTicketControllerTest {
 
         //open ticket
         dto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
 
         dto.setTicketRefNo(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setStatus(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setStatus("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
 
 
@@ -262,7 +247,7 @@ public class ClientTicketControllerTest {
         dto2.setTicketRefNo(ticket2.getTicketRefNo());
         dto2.setStatus("Close");
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto2)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"),dto2, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("user can not change the ticket status")));
     }
 
@@ -281,7 +266,7 @@ public class ClientTicketControllerTest {
 
         //Two messages inside ticket
         assertEquals(1,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
@@ -289,18 +274,18 @@ public class ClientTicketControllerTest {
         assertEquals(2,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
 
         dto.setTicketRefNo("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setMessage("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("must not be null or blank")));
 
         ticket1.setAssignedTo(null);
         ticketRepo.save(ticket1);
         dto.setMessage("This is coming from reply to ticket api");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply"),dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
     }
 
@@ -309,7 +294,7 @@ public class ClientTicketControllerTest {
     public void get_thread_ticket_test() throws Exception {
         mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/client/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/"+ticket1.getTicketRefNo()), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj", hasSize(1)))
                 .andExpect(jsonPath("$.resObj[0].id", is(tm1.getId().toString())))
@@ -321,7 +306,7 @@ public class ClientTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/{ticketRefNo}")
     public void get_ticket_test() throws Exception {
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/"+ticket1.getTicketRefNo()), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj.id", is(ticket1.getId().toString())))
                 .andExpect(jsonPath("$.resObj.ticketRefNo", is(ticket1.getTicketRefNo())))
@@ -333,7 +318,7 @@ public class ClientTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/metrics")
     public void get_ticket_metrics_test() throws Exception {
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/metrics"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/metrics"), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)))
                 .andExpect(jsonPath("$.resObj.open", is(1)))
                 .andExpect(jsonPath("$.resObj.closed", is(0)))
@@ -352,7 +337,7 @@ public class ClientTicketControllerTest {
         dto.setDescription("Updated description");
         dto.setAttachments(attachmentsNew);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
@@ -372,7 +357,7 @@ public class ClientTicketControllerTest {
         dtoNew.setDescription("Updated description of ticket 3");
         dtoNew.setAttachments(attachmentsNew);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket3.getTicketRefNo()),dtoNew)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket3.getTicketRefNo()),dtoNew, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
         verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
@@ -383,12 +368,12 @@ public class ClientTicketControllerTest {
         tm3.setOwner(ticket2.getAssignedTo());
         ticketMessageRepo.save(tm3);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
 
         ticket2.setStatus(TicketStatus.CLOSED);
         ticketRepo.save(ticket2);
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/"+ticket2.getTicketRefNo()),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("closed ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
 
     }
@@ -405,7 +390,7 @@ public class ClientTicketControllerTest {
         dto.setMessage("updated tm1 message");
         dto.setAttachments(attachments);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
@@ -415,7 +400,7 @@ public class ClientTicketControllerTest {
         ticket1.setStatus(TicketStatus.CLOSED);
         ticketRepo.save(ticket1);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("reply can not be updated for closed ticket"))).andExpect(jsonPath("$.statusCode", is(400)));
 
         TicketMessage tm2 = new TicketMessage();
@@ -427,7 +412,7 @@ public class ClientTicketControllerTest {
 
         ticket1.setStatus(TicketStatus.OPEN);
         ticketRepo.save(ticket1);
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("reply can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
 
         TicketUpdateReplyDto dto2 = new TicketUpdateReplyDto();
@@ -435,7 +420,7 @@ public class ClientTicketControllerTest {
         dto2.setMessage("updated tm2 message");
         dto2.setAttachments(attachments);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto2)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(put("/api/v1/client/tickets/reply"),dto2, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
         verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
@@ -459,7 +444,7 @@ public class ClientTicketControllerTest {
         ticketCreateDto.setAttachments(attachments);
         ticketCreateDto.setOpenedBy("TestingUser");
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),ticketCreateDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets"),ticketCreateDto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
@@ -472,37 +457,37 @@ public class ClientTicketControllerTest {
         ticketStatusChangeDto.setStatus("Close");
 
         //close ticket
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to close ticket again
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket is already closed")));
 
         //reopened ticket
         ticketStatusChangeDto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(3)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to open ticket again
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket is already open")));
 
         //close ticket
         ticketStatusChangeDto.setStatus("Close");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(4)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //reopened ticket
         ticketStatusChangeDto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/change-status"), ticketStatusChangeDto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(5)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/"+ticket.getTicketRefNo()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/client/tickets/thread/"+ticket.getTicketRefNo()), clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj", hasSize(5)))
                 .andExpect(jsonPath("$.resObj[0].message", is("TestingUser reopened ticket "+ticket.getTicketRefNo())))
@@ -524,7 +509,7 @@ public class ClientTicketControllerTest {
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/attachments/delete"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/attachments/delete"), dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/attachments/delete"), dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         Set<String> afterDeleteAttachments = new HashSet<>();
@@ -540,16 +525,16 @@ public class ClientTicketControllerTest {
         tm2.setMessageType(MessageType.REPLY);
         ticketMessageRepo.save(tm2);
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/attachments/delete"), dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("ticket's attachments can not be deleted")));
 
         dto.setTicketRefNo(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/attachments/delete"), dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setAttachments(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/attachments/delete"), dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.attachments", is("must not be null")));
     }
 
@@ -566,7 +551,7 @@ public class ClientTicketControllerTest {
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/client/tickets/reply/attachments/delete"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply/attachments/delete"), dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply/attachments/delete"), dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         Set<String> afterDeleteAttachments = new HashSet<>();
@@ -575,14 +560,14 @@ public class ClientTicketControllerTest {
 
         assertEquals(afterDeleteAttachments,ticketMessageRepo.findById(tm1.getId()).get().getAttachments());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply/attachments/delete"), dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply/attachments/delete"), dto, clientDto)).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
 
         ticket1.setStatus(TicketStatus.CLOSED);
         ticketRepo.save(ticket1);
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply/attachments/delete"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply/attachments/delete"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("reply's attachments can not be deleted for closed ticket"))).andExpect(jsonPath("$.statusCode", is(400)));
 
         TicketMessage tm2 = new TicketMessage();
@@ -594,7 +579,7 @@ public class ClientTicketControllerTest {
 
         ticket1.setStatus(TicketStatus.OPEN);
         ticketRepo.save(ticket1);
-        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply/attachments/delete"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/client/tickets/reply/attachments/delete"),dto, clientDto)).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("reply's attachments can not be deleted"))).andExpect(jsonPath("$.statusCode", is(400)));
     }
 }
