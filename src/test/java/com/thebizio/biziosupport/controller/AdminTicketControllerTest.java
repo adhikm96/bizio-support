@@ -12,6 +12,7 @@ import com.thebizio.biziosupport.service.ExternalApiService;
 import com.thebizio.biziosupport.service.UtilService;
 import com.thebizio.biziosupport.util.AdminKeycloakMockService;
 import com.thebizio.biziosupport.util.AdminUtilTestService;
+import com.thebizio.biziosupport.util.BaseTestCase;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -28,23 +29,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest
-@AutoConfigureMockMvc
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class AdminTicketControllerTest {
 
-    @Autowired
-    private MockMvc mvc;
-
-    @Autowired
-    private AdminUtilTestService utilTestService;
-
-    @Autowired
-    private AdminKeycloakMockService keycloakMockService;
+class AdminTicketControllerTest extends BaseTestCase {
 
     @Autowired
     private TicketRepo ticketRepo;
@@ -65,16 +54,9 @@ class AdminTicketControllerTest {
     @Autowired
     private TicketMessageRepo ticketMessageRepo;
 
-    private String getToken() {
-        return keycloakMockService.getToken(null);
-    }
-
-    @MockBean
-    private UtilService utilService;
 
     @BeforeAll
     public void beforeAll() {
-        keycloakMockService.mockStart();
         ticketMessageRepo.deleteAll();
         ticketRepo.deleteAll();
 
@@ -82,7 +64,6 @@ class AdminTicketControllerTest {
 
     @AfterAll
     public void afterAll() {
-        keycloakMockService.mockStop();
         ticketMessageRepo.deleteAll();
         ticketRepo.deleteAll();
     }
@@ -152,7 +133,7 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets create")
     public void create_ticket_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
 
         TicketCreateDto dto = new TicketCreateDto();
         Set<String> attachments = new HashSet<>();
@@ -171,38 +152,38 @@ class AdminTicketControllerTest {
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("openedBy must not be null")));
 
         dto.setOpenedBy("");
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("openedBy must not be blank")));
 
         dto.setOpenedBy("user7");
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         dto.setTitle(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("must not be null or blank")));
 
         dto.setTitle("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.title", is("must not be null or blank")));
     }
 
     @Test
     @DisplayName("test for /tickets List")
     public void get_tickets_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
         mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/admin/tickets"))).andExpect(status().isUnauthorized());
 
         //default page number 0 and page size 10
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets"), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(2)))
                 .andExpect(jsonPath("$.tickets[1].id", is(ticket1.getId().toString())))
                 .andExpect(jsonPath("$.tickets[1].title", is(ticket1.getTitle())))
@@ -213,47 +194,47 @@ class AdminTicketControllerTest {
 
         //pass page number 1 and page size 5
         List list = new ArrayList<>();
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?page=1&size=5"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?page=1&size=5"), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", is(list)))
                 .andExpect(jsonPath("$.pageSize", is(5)));
 
         //status open filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open"), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(2)));
 
         //status closed filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Closed"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Closed"), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(0)));
 
         //ticketRefNo filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?ticketRefNo="+ticket1.getTicketRefNo()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?ticketRefNo="+ticket1.getTicketRefNo()), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(1)));
 
         //userName filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?userName="+ticket1.getOpenedBy()), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(2)));
 
         //assignedTo filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?assignedTo=user3"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?assignedTo=user3"), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(1)));
 
         //status open and UserName filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&userName="+ticket1.getOpenedBy()), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(2)));
 
         //status open and assignedTo filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&assignedTo=user3"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&assignedTo=user3"), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(2)));
 
         //status open and assignedTo and UserName filter
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&assignedTo=user3&userName="+ticket1.getOpenedBy()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets?status=Open&assignedTo=user3&userName="+ticket1.getOpenedBy()), demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.tickets", hasSize(2)));
     }
 
     @Test
     @DisplayName("test for /tickets/change-status")
     public void change_ticket_status_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
 
         TicketStatusChangeDto dto = new TicketStatusChangeDto();
         dto.setTicketRefNo(ticket1.getTicketRefNo());
@@ -265,7 +246,7 @@ class AdminTicketControllerTest {
         assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
 
         //close ticket
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         assertEquals(TicketStatus.CLOSED,ticketRepo.findById(ticket1.getId()).get().getStatus());
@@ -274,7 +255,7 @@ class AdminTicketControllerTest {
 
         //open ticket
         dto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         assertEquals(TicketStatus.OPEN,ticketRepo.findById(ticket1.getId()).get().getStatus());
@@ -282,24 +263,24 @@ class AdminTicketControllerTest {
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         dto.setTicketRefNo(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setStatus(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setStatus("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status", is("must not be null or blank")));
     }
 
     @Test
     @DisplayName("test for /tickets/reply")
     public void reply_ticket_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
 
         Set<String> attachments = new HashSet<>();
         attachments.add("D");
@@ -313,7 +294,7 @@ class AdminTicketControllerTest {
 
         //Two messages inside ticket
         assertEquals(2,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
@@ -322,19 +303,19 @@ class AdminTicketControllerTest {
         assertEquals(3,ticketRepo.findById(ticket1.getId()).get().getMessages().size());
 
         dto.setTicketRefNo("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setMessage("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("must not be null or blank")));
 
         TicketReplyDto dto2 = new TicketReplyDto();
         dto2.setTicketRefNo(ticket2.getTicketRefNo());
         dto2.setMessage("This is coming from reply to ticket api");
         dto2.setAttachments(attachments);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto2)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply"),dto2, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("user can not reply to this ticket")));
     }
 
@@ -343,7 +324,7 @@ class AdminTicketControllerTest {
     public void get_thread_ticket_test() throws Exception {
         mvc.perform(utilTestService.setUpWithoutToken(get("/api/v1/admin/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket1.getTicketRefNo()), demoEntityGenerator.getAdminUserDto())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj", hasSize(2)))
                 .andExpect(jsonPath("$.resObj[1].id", is(tm1.getId().toString())))
@@ -356,7 +337,7 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/assign-ticket")
     public void assign_ticket_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user1");
+//        when(utilService.getAuthUserName()).thenReturn("user1");
 
         TicketAssignDto dto = new TicketAssignDto();
         dto.setTicketRefNo(ticket1.getTicketRefNo());
@@ -364,18 +345,18 @@ class AdminTicketControllerTest {
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto, demoEntityGenerator.getAdminUserDto("user1"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         dto.setTicketRefNo(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto, demoEntityGenerator.getAdminUserDto("user1"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setAdminUserId("");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"),dto, demoEntityGenerator.getAdminUserDto("user1"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.adminUserId", is("must not be null or blank")));
     }
 
@@ -383,27 +364,27 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/claim")
     public void claim_ticket_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
         userDetailsDto.setUserName("user3");
         TicketClaimDto dto = new TicketClaimDto();
         dto.setTicketRefNo(ticket1.getTicketRefNo());
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         dto.setTicketRefNo(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/claim"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
     }
 
     @Test
     @DisplayName("test for /tickets/{ticketRefNo}")
     public void get_ticket_test() throws Exception {
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/"+ticket1.getTicketRefNo()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/"+ticket1.getTicketRefNo()), demoEntityGenerator.getAdminUserDto())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj.id", is(ticket1.getId().toString())))
                 .andExpect(jsonPath("$.resObj.ticketRefNo", is(ticket1.getTicketRefNo())))
@@ -415,7 +396,7 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/metrics")
     public void get_ticket_metrics_test() throws Exception {
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/metrics"))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/metrics"), demoEntityGenerator.getAdminUserDto())).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)))
                 .andExpect(jsonPath("$.resObj.open", is(2)))
                 .andExpect(jsonPath("$.resObj.closed", is(0)))
@@ -424,7 +405,7 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/{ticketRefNo}  update")
     public void ticket_update_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
 
         Set<String> attachmentsNew = new HashSet<>();
         attachmentsNew.add("D");
@@ -435,7 +416,7 @@ class AdminTicketControllerTest {
         dto.setDescription("Updated description");
         dto.setAttachments(attachmentsNew);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket2.getTicketRefNo()),dto,demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 
         assertEquals(ticketRepo.findById(ticket2.getId()).get().getTitle(),dto.getTitle());
@@ -456,12 +437,12 @@ class AdminTicketControllerTest {
         dtoNew.setDescription("Updated description of ticket 3");
         dtoNew.setAttachments(attachmentsNew);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket3.getTicketRefNo()),dtoNew)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket3.getTicketRefNo()),dtoNew, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 
         verify(emailService, times(2)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket1.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket1.getTicketRefNo()),dto,demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("user can not update ticket"))).andExpect(jsonPath("$.statusCode", is(400)));
 
         TicketMessage tm3 = new TicketMessage();
@@ -471,14 +452,14 @@ class AdminTicketControllerTest {
         tm3.setOwner(ticket2.getAssignedTo());
         ticketMessageRepo.save(tm3);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket2.getTicketRefNo()),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/"+ticket2.getTicketRefNo()),dto,demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("ticket can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
     }
 
     @Test
     @DisplayName("test for /tickets/reply  update")
     public void ticket_update_reply_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
 
         Set<String> attachments = new HashSet<>();
         attachments.add("D");
@@ -489,7 +470,7 @@ class AdminTicketControllerTest {
         dto.setMessage("updated tm2 message");
         dto.setAttachments(attachments);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/reply"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.message", is("OK"))).andExpect(jsonPath("$.statusCode", is(200)));
 
         verify(emailService, times(1)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
@@ -503,7 +484,7 @@ class AdminTicketControllerTest {
         tm3.setMessageType(MessageType.REPLY);
         ticketMessageRepo.save(tm3);
 
-        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/reply"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(put("/api/v1/admin/tickets/reply"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("reply can not be updated"))).andExpect(jsonPath("$.statusCode", is(400)));
     }
 
@@ -511,7 +492,7 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for ticket events")
     public void ticket_events_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
 
         TicketCreateDto ticketCreateDto = new TicketCreateDto();
         Set<String> attachments = new HashSet<>();
@@ -527,7 +508,7 @@ class AdminTicketControllerTest {
         ticketCreateDto.setAttachments(attachments);
         ticketCreateDto.setOpenedBy("user3");
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),ticketCreateDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets"),ticketCreateDto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         Ticket ticket = ticketRepo.findByTitle("Ticket Event").orElseThrow(() -> new NotFoundException("ticket not found"));
@@ -539,67 +520,67 @@ class AdminTicketControllerTest {
         ticketAssignDto.setTicketRefNo(ticket.getTicketRefNo());
         ticketAssignDto.setAdminUserId("adminUser");
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(3)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         userDetailsDto.setUserName("adminUser2");
         ticketAssignDto.setAdminUserId("adminUser2");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(5)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
-        userDetailsDto.setUserName("adminUser3");
-        ticketAssignDto.setAdminUserId("adminUser3");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto)).andExpect(status().isOk())
+        userDetailsDto.setUserName("admin_user3");
+        ticketAssignDto.setAdminUserId("admin_user3");
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/assign-ticket"), ticketAssignDto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(7)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
-        when(utilService.getAuthUserName()).thenReturn("adminUser3");
+//        when(utilService.getAuthUserName()).thenReturn("admin_user3");
 
         TicketStatusChangeDto ticketStatusChangeDto = new TicketStatusChangeDto();
         ticketStatusChangeDto.setTicketRefNo(ticket.getTicketRefNo());
         ticketStatusChangeDto.setStatus("Close");
 
         //close ticket
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(8)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to close ticket again
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket is already closed")));
 
         //reopened ticket
         ticketStatusChangeDto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(9)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //try to open ticket again
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.statusCode", is(400))).andExpect(jsonPath("$.message", is("ticket is already open")));
 
         //close ticket
         ticketStatusChangeDto.setStatus("Close");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(10)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
         //reopened ticket
         ticketStatusChangeDto.setStatus("Open");
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/change-status"), ticketStatusChangeDto, demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
         verify(emailService, times(11)).sendMailMimeWithHtml(anyString(), anyString(), any(Map.class), anyString());
 
-        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket.getTicketRefNo()))).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(get("/api/v1/admin/tickets/thread/"+ticket.getTicketRefNo()), demoEntityGenerator.getAdminUserDto("admin_user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")))
                 .andExpect(jsonPath("$.resObj", hasSize(8)))
-                .andExpect(jsonPath("$.resObj[0].message", is("adminUser3 reopened ticket "+ticket.getTicketRefNo())))
-                .andExpect(jsonPath("$.resObj[1].message", is("adminUser3 closed ticket "+ticket.getTicketRefNo())))
-                .andExpect(jsonPath("$.resObj[2].message", is("adminUser3 reopened ticket "+ticket.getTicketRefNo())))
-                .andExpect(jsonPath("$.resObj[3].message", is("adminUser3 closed ticket "+ticket.getTicketRefNo())))
-                .andExpect(jsonPath("$.resObj[4].message", is(ticket.getTicketRefNo()+" is reassigned to adminUser3")))
+                .andExpect(jsonPath("$.resObj[0].message", is("admin_user3 reopened ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[1].message", is("admin_user3 closed ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[2].message", is("admin_user3 reopened ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[3].message", is("admin_user3 closed ticket "+ticket.getTicketRefNo())))
+                .andExpect(jsonPath("$.resObj[4].message", is(ticket.getTicketRefNo()+" is reassigned to admin_user3")))
                 .andExpect(jsonPath("$.resObj[5].message", is(ticket.getTicketRefNo()+" is reassigned to adminUser2")))
                 .andExpect(jsonPath("$.resObj[6].message", is(ticket.getTicketRefNo()+" is assigned to adminUser")))
                 .andExpect(jsonPath("$.resObj[7].message", is("user3 opened ticket "+ticket.getTicketRefNo())));
@@ -609,7 +590,7 @@ class AdminTicketControllerTest {
     @Test
     @DisplayName("test for /tickets/attachments/delete")
     public void delete_ticket_attachments_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user1");
+//        when(utilService.getAuthUserName()).thenReturn("user1");
         Set<String> deleteAttachments = new HashSet<>();
         deleteAttachments.add("B");
 
@@ -621,7 +602,7 @@ class AdminTicketControllerTest {
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/attachments/delete"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto, demoEntityGenerator.getAdminUserDto("user1"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         Set<String> afterDeleteAttachments = new HashSet<>();
@@ -637,23 +618,23 @@ class AdminTicketControllerTest {
         tm3.setMessageType(MessageType.REPLY);
         ticketMessageRepo.save(tm3);
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto, demoEntityGenerator.getAdminUserDto("user1"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("ticket's attachments can not be deleted")));
 
         dto.setTicketRefNo(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto, demoEntityGenerator.getAdminUserDto("user1"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.ticketRefNo", is("must not be null or blank")));
 
         dto.setTicketRefNo(ticket1.getTicketRefNo());
         dto.setAttachments(null);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/attachments/delete"), dto, demoEntityGenerator.getAdminUserDto("user1"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.attachments", is("must not be null")));
     }
 
     @Test
     @DisplayName("test for /tickets/reply/attachments/delete")
     public void delete_ticket_reply_attachments_test() throws Exception {
-        when(utilService.getAuthUserName()).thenReturn("user3");
+//        when(utilService.getAuthUserName()).thenReturn("user3");
         Set<String> deleteAttachments = new HashSet<>();
         deleteAttachments.add("B");
 
@@ -664,7 +645,7 @@ class AdminTicketControllerTest {
 
         mvc.perform(utilTestService.setUpWithoutToken(post("/api/v1/admin/tickets/reply/attachments/delete"),dto)).andExpect(status().isUnauthorized());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"), dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"), dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
         Set<String> afterDeleteAttachments = new HashSet<>();
@@ -673,14 +654,14 @@ class AdminTicketControllerTest {
 
         assertEquals(afterDeleteAttachments,ticketMessageRepo.findById(tm2.getId()).get().getAttachments());
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"), dto)).andExpect(status().isOk())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"), dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.statusCode", is(200))).andExpect(jsonPath("$.message", is("OK")));
 
 
         ticket1.setStatus(TicketStatus.CLOSED);
         ticketRepo.save(ticket1);
 
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("reply's attachments can not be deleted for closed ticket"))).andExpect(jsonPath("$.statusCode", is(400)));
 
         TicketMessage tm3 = new TicketMessage();
@@ -692,7 +673,7 @@ class AdminTicketControllerTest {
 
         ticket1.setStatus(TicketStatus.OPEN);
         ticketRepo.save(ticket1);
-        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"),dto)).andExpect(status().isBadRequest())
+        mvc.perform(utilTestService.setUp(post("/api/v1/admin/tickets/reply/attachments/delete"),dto, demoEntityGenerator.getAdminUserDto("user3"))).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message", is("reply's attachments can not be deleted"))).andExpect(jsonPath("$.statusCode", is(400)));
     }
 
