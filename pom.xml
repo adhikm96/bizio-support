@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.thebizio</groupId>
 	<artifactId>bizio-support</artifactId>
-	<version>1.221124.5-SNAPSHOT</version>
+	<version>1.240309.0</version>
 	<name>bizio-support</name>
 	<description>Bizio Support</description>
 	<properties>

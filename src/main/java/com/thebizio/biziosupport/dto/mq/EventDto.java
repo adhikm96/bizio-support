@@ -4,12 +4,14 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class EventDto {
-    private String group;
-    private String component;
+    private String project;
+    private String module;
     private String hostName;
     private String eventType;
     private long timestamp;
@@ -22,4 +24,8 @@ public class EventDto {
     private String payload;
     private boolean log;
     private boolean forward;
+    private String event;
+    private String org;
+    private List<String> notificationIds;
+
 }
