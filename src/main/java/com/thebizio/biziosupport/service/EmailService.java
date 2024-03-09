@@ -2,6 +2,9 @@ package com.thebizio.biziosupport.service;
 
 import com.thebizio.biziosupport.dto.email.HtmlBodyEmailDto;
 import com.thebizio.biziosupport.enums.NotificationTypeEnum;
+import com.thebizio.biziosupport.enums.events.Actor;
+import com.thebizio.biziosupport.enums.events.EType;
+import com.thebizio.biziosupport.enums.events.EventType;
 import com.thebizio.biziosupport.service.rmq.EventDtoService;
 import com.thebizio.biziosupport.service.rmq.EventManagerService;
 import freemarker.template.Configuration;
@@ -16,6 +19,7 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.HtmlUtils;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Map;
 
 @Service
@@ -48,9 +52,9 @@ public class EmailService {
 		rabbitTemplate.convertAndSend(emailExchange, emailRouteKey, emailDto);
 
 		//send email event in queue
-		eventManagerService.addEventInQueue(eventDtoService.createEventDto("Bizio-Support", "bizio.email", hostName, "Notification",
-				"Info", "System", "sys", "Email", "EmailMsgQueued",
-				"Email has been queued", "", true, false));
+		eventManagerService.addEventInQueue(eventDtoService.createEventDto("BZ-ADMIN", "SUPPORT", hostName, EventType.NOTIFICATION,
+				EType.INFO, Actor.SYSTEM, "sys", "Email", "EmailMsgQueued",
+				"Email has been queued", "", true, false, "EMAIL", "", Collections.emptyList()));
 
 		return true;
 	}
