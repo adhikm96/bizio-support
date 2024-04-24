@@ -10,8 +10,11 @@ import com.thebizio.biziosupport.exception.AlreadyExistsException;
 import com.thebizio.biziosupport.exception.NotFoundException;
 import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import com.thebizio.biziosupport.repo.TicketRepo;
+import com.thebizio.biziosupport.service.rmq.BizioEventListener;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.TypeToken;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -25,6 +28,8 @@ import java.util.*;
 
 @Service
 public class TicketService {
+
+    Logger logger = LoggerFactory.getLogger(TicketService.class);
 
     @Value(("${enable-notifications}"))
     private String ENABLE_NOTIFICATIONS;
@@ -94,7 +99,7 @@ public class TicketService {
         ticketRepo.flush();
 
         TicketMessage ticketMessage = new TicketMessage();
-        ticketMessage.setMessage(ticket.getOpenedBy()+" opened ticket "+ticket.getTicketRefNo());
+        ticketMessage.setMessage(ticket.getOpenedBy() + " opened ticket " + ticket.getTicketRefNo());
         ticketMessage.setMessageType(MessageType.EVENT);
         ticketMessage.setTicket(ticket);
         ticketMessageRepo.save(ticketMessage);
@@ -104,6 +109,27 @@ public class TicketService {
         }else {
             sendEmailToUser(ticket.getOpenedBy(),ticket,"Ticket Created","ticket-created-notification-to-user.ftl");
         }
+        return "OK";
+    }
+
+    @Transactional
+    public String createEmailTicket(DomainTicketCreateDto dto) {
+        Ticket ticket = new Ticket();
+        ticket.setTicketType(TicketType.TECHNICAL);
+        ticket.setTitle(dto.getTitle());
+        ticket.setDescription(dto.getDescription());
+        ticket.setStatus(TicketStatus.OPEN);
+        ticket.setOpenedBy(dto.getUsername());
+        ticketRepo.save(ticket);
+        ticketRepo.flush();
+
+        TicketMessage ticketMessage = new TicketMessage();
+        ticketMessage.setMessage(ticket.getOpenedBy() + " opened ticket " + ticket.getTicketRefNo());
+        ticketMessage.setMessageType(MessageType.EVENT);
+        ticketMessage.setTicket(ticket);
+        ticketMessageRepo.save(ticketMessage);
+
+        sendEmailToUser(ticket.getOpenedBy(), ticket, "Ticket Created", "ticket-created-notification-to-user.ftl");
         return "OK";
     }
 
@@ -345,17 +371,27 @@ public class TicketService {
     }
 
     public void sendEmailToAdmin(String userName,Ticket ticket,String subject, String template){
-        userNameNullCheck(userName);
-        UserDetailsDto adminUser = externalApiService.searchUser(userName,true);
-        sendSuccessMail(adminUser.getEmail(),subject,template,
-                adminUser.getFirstName(),adminUser.getLastName(),ticket.getOpenedBy(),adminUser.getUserName(),ticket.getTicketRefNo());
+        try {
+            userNameNullCheck(userName);
+            UserDetailsDto adminUser = externalApiService.searchUser(userName,true);
+            sendSuccessMail(adminUser.getEmail(),subject,template,
+                    adminUser.getFirstName(),adminUser.getLastName(),ticket.getOpenedBy(),adminUser.getUserName(),ticket.getTicketRefNo());
+        }catch (Exception e){
+            logger.error("failed to send ticket create email to admin : " + ticket.getOpenedBy());
+        }
+
     }
 
     public void sendEmailToUser(String userName,Ticket ticket,String subject, String template){
-        userNameNullCheck(userName);
-        UserDetailsDto user = externalApiService.searchUser(userName,false);
-        sendSuccessMail(user.getEmail(),subject,template,
-                user.getFirstName(),user.getLastName(),user.getUserName(),ticket.getAssignedTo(),ticket.getTicketRefNo());
+        try {
+            userNameNullCheck(userName);
+            UserDetailsDto user = externalApiService.searchUser(userName,false);
+            sendSuccessMail(user.getEmail(),subject,template,
+                    user.getFirstName(),user.getLastName(),user.getUserName(),ticket.getAssignedTo(),ticket.getTicketRefNo());
+        }catch (Exception e){
+            logger.error("failed to send ticket create email to user : " + ticket.getOpenedBy());
+        }
+
     }
 
     public String replyTicket(TicketReplyDto dto) {
