@@ -9,16 +9,10 @@ import com.thebizio.biziosupport.repo.TicketMessageRepo;
 import com.thebizio.biziosupport.repo.TicketRepo;
 import com.thebizio.biziosupport.service.EmailService;
 import com.thebizio.biziosupport.service.ExternalApiService;
-import com.thebizio.biziosupport.service.UtilService;
-import com.thebizio.biziosupport.util.AdminKeycloakMockService;
-import com.thebizio.biziosupport.util.AdminUtilTestService;
 import com.thebizio.biziosupport.util.BaseTestCase;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.*;
 

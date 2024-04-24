@@ -1,6 +1,5 @@
 package com.thebizio.biziosupport.service;
 
-import com.thebizio.biziosupport.service.TicketService;
 import com.thebizio.biziosupport.util.BaseTestCase;
 import com.thebizio.biziosupport.util.mq.Listener;
 import org.junit.jupiter.api.Test;
