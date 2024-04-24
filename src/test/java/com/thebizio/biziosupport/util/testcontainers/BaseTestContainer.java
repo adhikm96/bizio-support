@@ -18,7 +18,9 @@ public class BaseTestContainer {
     public static RabbitMQContainer rabbit = new RabbitMQContainer(DockerImageName.parse("rabbitmq:3.7.25-management-alpine"))
             .withExposedPorts(5672);
 
-    public static KeycloakContainer keycloak = new KeycloakContainer("quay.io/keycloak/keycloak:16.1.1gi").withEnv("DB_VENDOR", "h2");
+    public static KeycloakContainer keycloak = OSValidator.isMac() ?
+            new KeycloakContainer("sleighzy/keycloak").withEnv("DB_VENDOR", "h2") :
+            new KeycloakContainer("quay.io/keycloak/keycloak:16.1.1").withEnv("DB_VENDOR", "h2");
 
     public static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
             .withUsername("postgres")
